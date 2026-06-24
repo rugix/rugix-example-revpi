@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: RevPi InfluxDB
+    uid: revpi-influxdb
+    type: influxdb
+    access: proxy
+    url: ${INFLUXDB_URL}
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: ${INFLUXDB_ORG}
+      defaultBucket: ${INFLUXDB_BUCKET}
+      httpMode: POST
+    secureJsonData:
+      token: ${INFLUXDB_TOKEN}

@@ -1,0 +1,13 @@
+Types: deb
+URIs: http://archive.raspberrypi.org/debian/
+Suites: SUITE
+Components: main
+Signed-By: /usr/share/keyrings/_raspberrypi-archive-keyring.gpg
+
+Types: deb-src
+Enabled: no
+URIs: http://archive.raspberrypi.org/debian/
+Suites: SUITE
+Components: main
+Signed-By: /usr/share/keyrings/_raspberrypi-archive-keyring.gpg
+

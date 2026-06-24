@@ -1,0 +1,2 @@
+description = "prepare the RevPi rootfs for cloning as a Rugix image"
+priority = -990_000

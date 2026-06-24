@@ -1,0 +1,2 @@
+description = "persist RevPi configuration and generated identity files"
+priority = -800_000

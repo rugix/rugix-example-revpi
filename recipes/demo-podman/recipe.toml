@@ -1,0 +1,3 @@
+description = "install Podman so the demo image can build images and run containers on-device"
+dependencies = ["core/pkg-update"]
+

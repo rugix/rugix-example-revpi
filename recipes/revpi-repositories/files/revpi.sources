@@ -1,0 +1,12 @@
+Types: deb
+URIs: http://packages.revolutionpi.de/
+Suites: SUITE
+Components: main contrib
+Signed-By: /usr/share/keyrings/_revpi-keyring.gpg
+
+Types: deb
+URIs: http://packages.revolutionpi.de/
+Suites: SUITE-backports
+Components: main contrib
+Signed-By: /usr/share/keyrings/_revpi-keyring.gpg
+

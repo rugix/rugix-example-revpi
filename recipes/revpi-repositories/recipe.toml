@@ -1,0 +1,3 @@
+description = "install temporary bootstrap sources for KUNBUS and Raspberry Pi repositories"
+priority = 850_000
+dependencies = ["core/pkg-update"]

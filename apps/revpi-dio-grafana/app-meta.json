@@ -1,0 +1,29 @@
+{
+  "name": "revpi-dio-grafana",
+  "summary": "Read RevPi DIO counter values, switch outputs, and visualize state, counts, and rates with a local UI and Grafana.",
+  "industrialUseCase": "Local machine pulse counting, event-rate monitoring, output checks, and digital input diagnostics on Revolution Pi devices.",
+  "protocols": ["RevPi piControl", "InfluxDB Flux", "HTTP"],
+  "nexigonOverlap": false,
+  "components": [
+    {
+      "name": "InfluxDB OSS 2",
+      "role": "Local time-series database",
+      "license": "MIT"
+    },
+    {
+      "name": "Grafana OSS",
+      "role": "Local dashboard UI",
+      "license": "AGPL-3.0-only"
+    },
+    {
+      "name": "RevPiModIO",
+      "role": "Python access to the RevPi process image for input, counter, and output control",
+      "license": "LGPL-2.1-or-later"
+    },
+    {
+      "name": "InfluxDB Python Client",
+      "role": "Writes DIO samples and schema markers to InfluxDB",
+      "license": "MIT"
+    }
+  ]
+}

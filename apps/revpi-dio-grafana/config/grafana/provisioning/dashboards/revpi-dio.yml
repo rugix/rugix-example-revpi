@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: RevPi DIO
+    orgId: 1
+    folder: Revolution Pi
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/dashboards

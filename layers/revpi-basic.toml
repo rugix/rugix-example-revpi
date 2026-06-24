@@ -1,0 +1,6 @@
+parent = "revpi-base"
+
+recipes = [
+    # piControl, PiCtory, Cockpit integration, Modbus, and base web services.
+    "revpi-basic-packages",
+]

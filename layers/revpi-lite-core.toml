@@ -1,0 +1,6 @@
+parent = "revpi-basic"
+
+recipes = [
+    # KUNBUS' lite-flavour package set without the desktop GUI.
+    "revpi-lite-packages",
+]

@@ -1,0 +1,3 @@
+description = "install the RevPi kernel, firmware, boot files, and essential services"
+priority = 840_000
+dependencies = ["revpi-repositories"]

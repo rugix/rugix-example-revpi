@@ -1,0 +1,186 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - ci
+    tags:
+      - "*"
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Optional Rugix release version override."
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  prepare-release:
+    name: Prepare Release Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Generate release metadata
+        id: metadata
+        env:
+          RELEASE_VERSION_INPUT: ${{ github.event.inputs.release_version }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${RELEASE_VERSION_INPUT}" ]; then
+              VERSION="${RELEASE_VERSION_INPUT}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+              VERSION="${GITHUB_REF_NAME}"
+          else
+              TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
+              GIT_COMMIT=$(git rev-parse --short HEAD)
+              VERSION="build-${TIMESTAMP}-${GIT_COMMIT}"
+          fi
+
+          if [[ ! "${VERSION}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo "[ERROR] release version may only contain letters, numbers, dots, underscores, and hyphens"
+              exit 1
+          fi
+
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "[INFO] VERSION=${VERSION}"
+
+  build:
+    name: Build ${{ matrix.system }}
+    runs-on: ubuntu-latest
+    needs: prepare-release
+    strategy:
+      fail-fast: false
+      matrix:
+        system:
+          - revpi-lite
+          - revpi-default
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - name: Build image and bundle
+        env:
+          SYSTEM: ${{ matrix.system }}
+          VERSION: ${{ needs.prepare-release.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          echo "[INFO] building image for '${SYSTEM}' (version: ${VERSION})"
+          ./run-bakery bake image "${SYSTEM}" --release-version "${VERSION}"
+
+          echo "[INFO] building bundle for '${SYSTEM}' (version: ${VERSION})"
+          ./run-bakery bake bundle "${SYSTEM}" --release-version "${VERSION}"
+
+          IMG_PATH="build/${SYSTEM}/system.img"
+          if [ -e "${IMG_PATH}" ]; then
+              echo "[INFO] compressing '${SYSTEM}' image"
+              xz -T0 -f "${IMG_PATH}"
+          fi
+
+          sudo chown -R "$(id -u):$(id -g)" build
+
+      - name: Collect artifacts
+        env:
+          SYSTEM: ${{ matrix.system }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "dist/${SYSTEM}"
+
+          collect_artifact() {
+              src="$1"
+              dest="$2"
+
+              if [ -e "${src}" ]; then
+                  ln "${src}" "${dest}" 2>/dev/null || cp "${src}" "${dest}"
+              fi
+          }
+
+          if [ -e "build/${SYSTEM}/system.img.xz" ]; then
+              collect_artifact "build/${SYSTEM}/system.img.xz" "dist/${SYSTEM}/${SYSTEM}.img.xz"
+          fi
+          if [ -e "build/${SYSTEM}/system.rugixb" ]; then
+              collect_artifact "build/${SYSTEM}/system.rugixb" "dist/${SYSTEM}/${SYSTEM}.rugixb"
+          fi
+          if [ -e "build/${SYSTEM}/system.rugixb-hash" ]; then
+              collect_artifact "build/${SYSTEM}/system.rugixb-hash" "dist/${SYSTEM}/${SYSTEM}.rugixb-hash"
+          fi
+          if [ -e "build/${SYSTEM}/sbom.cdx.json" ]; then
+              collect_artifact "build/${SYSTEM}/sbom.cdx.json" "dist/${SYSTEM}/${SYSTEM}.cdx.json"
+          fi
+          if [ -e "build/${SYSTEM}/system-build-info.json" ]; then
+              collect_artifact "build/${SYSTEM}/system-build-info.json" "dist/${SYSTEM}/${SYSTEM}.build-info.json"
+          fi
+
+          if ! find "dist/${SYSTEM}" -type f -print -quit | grep -q .; then
+              echo "[ERROR] no artifacts found for '${SYSTEM}'"
+              exit 1
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.system }}
+          path: dist/${{ matrix.system }}/
+          if-no-files-found: error
+          compression-level: 0
+
+  publish-release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - prepare-release
+      - build
+    if: github.ref_type == 'tag'
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          files=(dist/*)
+          if [ "${#files[@]}" -eq 0 ]; then
+              echo "[ERROR] no release assets found"
+              exit 1
+          fi
+
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              gh release upload "${GITHUB_REF_NAME}" "${files[@]}" \
+                  --repo "${GITHUB_REPOSITORY}" \
+                  --clobber
+          else
+              gh release create "${GITHUB_REF_NAME}" "${files[@]}" \
+                  --repo "${GITHUB_REPOSITORY}" \
+                  --title "${GITHUB_REF_NAME}" \
+                  --notes "Rugix build for ${GITHUB_SHA}."
+          fi

@@ -1,0 +1,26 @@
+recipes = [
+    "core/pkg-update",
+    "nexigon/nexigon-agent-rpi",
+    "nexigon/nexigon-agent",
+    "nexigon/nexigon-agent-config",
+    "nexigon/nexigon-power",
+    "nexigon/nexigon-systemd",
+    "nexigon/nexigon-rugix-ota",
+]
+
+[parameters."nexigon/nexigon-rugix-ota"]
+use_bundle_hash = true
+
+[parameters."nexigon/nexigon-agent"]
+version = "v0.5"
+
+[parameters."nexigon/nexigon-agent-config"]
+extra_config = """
+[commands]
+enabled = true
+
+[terminal]
+enabled = true
+user = "root"
+"""
+

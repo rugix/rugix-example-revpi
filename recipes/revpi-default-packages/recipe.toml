@@ -1,0 +1,3 @@
+description = "install KUNBUS' default RevPi GUI package set"
+priority = 810_000
+dependencies = ["core/pkg-update"]

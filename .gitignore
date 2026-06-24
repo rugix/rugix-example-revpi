@@ -1,0 +1,8 @@
+build
+.rugix
+.runtime
+.tools
+dist
+.env
+.nexigon-cli.toml
+.release-env

@@ -1,0 +1,21 @@
+[repositories]
+rugix-extra = { git = "https://github.com/rugix/rugix-extra.git", branch = "v0.8" }
+nexigon = { git = "https://github.com/nexigon/nexigon-rugix.git", branch = "main" }
+
+# Current KUNBUS debos-build master defaults to Trixie.
+[systems.revpi-lite]
+layer = "revpi-lite"
+architecture = "arm64"
+target = "rpi-tryboot"
+
+# Lite image with Docker and Rugix Apps support for the app examples in apps/.
+[systems.revpi-lite-apps]
+layer = "revpi-lite-apps"
+architecture = "arm64"
+target = "rpi-tryboot"
+
+# Same Trixie base with the GUI packages from KUNBUS' default flavour.
+[systems.revpi-default]
+layer = "revpi-default"
+architecture = "arm64"
+target = "rpi-tryboot"

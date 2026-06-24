@@ -1,0 +1,33 @@
+parent = "core/debian-trixie"
+
+recipes = [
+    # Install KUNBUS and Raspberry Pi apt repositories.
+    "revpi-repositories",
+    # Install the RevPi kernel, firmware, boot files, and essential services.
+    "revpi-base-system",
+    # Apply the minimal system configuration used by KUNBUS images.
+    "revpi-minimal-system",
+    # Create the default RevPi user.
+    "revpi-default-user",
+    # Enable SSH and hydrate host keys from Rugix-managed state.
+    "core/ssh",
+    # Current upstream Trixie image warning from Kunbus' debos master.
+    "revpi-trixie-motd",
+    # Persist RevPi runtime configuration across immutable rootfs boots.
+    "revpi-rugix-state",
+    # Useful tools for demo and troubleshooting.
+    "demo-basic-tools",
+]
+
+[parameters."revpi-minimal-system"]
+hostname = "RevPi"
+
+[parameters."revpi-default-user"]
+user = "pi"
+password = "revolutionpi"
+
+[parameters."core/ssh"]
+root_authorized_keys = ""
+
+[parameters."core/pkg-cleanup"]
+autoremove = true

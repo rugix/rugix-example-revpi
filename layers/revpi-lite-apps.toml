@@ -1,0 +1,7 @@
+parent = "revpi-lite-core"
+
+recipes = [
+    # Docker plus Rugix Apps recovery services for Docker Compose app bundles.
+    "demo-docker-app-runtime",
+    "revpi-image-prep",
+]

@@ -1,0 +1,23 @@
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+
+__        ___    ____  _   _ ___ _   _  ____
+\ \      / / \  |  _ \| \ | |_ _| \ | |/ ___|_
+ \ \ /\ / / _ \ | |_) |  \| || ||  \| | |  _(_)
+  \ V  V / ___ \|  _ <| |\  || || |\  | |_| |_
+   \_/\_/_/   \_\_| \_\_| \_|___|_| \_|\____(_)
+
+
+Please keep in mind that this is a beta version of the RevPi Trixie image,
+which is still in active development and thus very likely to break. There is
+no official support. Keep your data backed up at all times.
+
+This image is not meant for use in production!
+
+If you have any questions or encounter a problem please consult our community forum:
+
+https://revolutionpi.com/forum/

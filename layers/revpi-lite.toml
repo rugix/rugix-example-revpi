@@ -1,0 +1,5 @@
+parent = "revpi-lite-core"
+
+recipes = [
+    "revpi-image-prep",
+]

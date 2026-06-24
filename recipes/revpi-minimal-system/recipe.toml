@@ -1,0 +1,5 @@
+description = "apply KUNBUS' minimal RevPi system configuration"
+priority = 830_000
+
+[parameters]
+hostname = { default = "RevPi" }

@@ -1,0 +1,7 @@
+parent = "revpi-lite-core"
+
+recipes = [
+    # KUNBUS' default-flavour GUI additions.
+    "revpi-default-packages",
+    "revpi-image-prep",
+]

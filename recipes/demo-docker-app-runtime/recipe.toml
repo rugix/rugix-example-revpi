@@ -1,0 +1,2 @@
+description = "install Docker and Rugix Apps recovery services for app bundle demos"
+dependencies = ["core/pkg-update"]

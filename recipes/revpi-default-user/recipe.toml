@@ -1,0 +1,6 @@
+description = "create the default RevPi user"
+priority = 825_000
+
+[parameters]
+user = { default = "pi" }
+password = { default = "revolutionpi" }

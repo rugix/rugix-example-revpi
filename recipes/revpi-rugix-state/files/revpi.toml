@@ -1,0 +1,35 @@
+[[persist]]
+directory = "/root"
+
+[[persist]]
+directory = "/home/pi"
+
+[[persist]]
+directory = "/etc/revpi"
+
+[[persist]]
+directory = "/etc/revpipyload"
+
+[[persist]]
+directory = "/etc/NetworkManager/system-connections"
+
+[[persist]]
+directory = "/var/lib/NetworkManager"
+
+[[persist]]
+directory = "/var/lib/systemd/rfkill"
+
+[[persist]]
+directory = "/var/lib/revpipyload"
+
+[[persist]]
+directory = "/var/opt/codesys/PlcLogic/revpi"
+
+[[persist]]
+file = "/etc/default/revpipyload"
+
+[[persist]]
+file = "/etc/default/mqtt-revpi-client"
+
+[[persist]]
+file = "/etc/default/opcua-revpi-server"

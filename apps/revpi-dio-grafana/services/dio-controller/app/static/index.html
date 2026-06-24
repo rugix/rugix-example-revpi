@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RevPi DIO</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Revolution Pi</p>
+          <h1>DIO Control</h1>
+        </div>
+        <div class="status" id="connection">Connecting</div>
+      </header>
+
+      <section class="grid">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Inputs</h2>
+            <span id="input-count">0</span>
+          </div>
+          <div class="io-grid" id="inputs"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Outputs</h2>
+            <span id="output-count">0</span>
+          </div>
+          <div class="io-grid" id="outputs"></div>
+        </section>
+
+        <section class="panel wide">
+          <div class="panel-head">
+            <h2>Counters</h2>
+            <span id="counter-count">0</span>
+          </div>
+          <div class="counter-grid" id="counters"></div>
+        </section>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
