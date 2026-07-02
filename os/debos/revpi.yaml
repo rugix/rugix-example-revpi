@@ -6,7 +6,7 @@
 {{ $arch := or .arch "arm64" -}}
 {{- $suite := or .suite "trixie" -}}
 {{- $flavour := or .flavour "default" -}}
-{{- $type := or .type "revpi" -}}
+{{- $type := or .type "rugix" -}}
 {{- $image_size_from_user := or .image_size "" -}}
 {{- $image_size := $image_size_from_user -}}
 {{- $user := or .user "pi" -}}
