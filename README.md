@@ -30,6 +30,11 @@ By adopting this stack for your device you get:
 > [!NOTE]
 > **Support:** This repository is subject to [Tier 3: Example Integrations](https://rugix.org/support-commitment/#tier-example-integration) of our Support Commitment.
 
+> [!CAUTION]
+> The examples in this repository are provided for demonstration purposes. As such, they may rely
+> on insecure default configarations (hardcoded credentials, exposed services, …) to make it easy
+> to get started. **Do not use the provided examples in production without proper hardening.**
+
 ## Quick Start
 
 If you want to start hands-on, pick the path that matches what you want to try:
