@@ -15,6 +15,9 @@ RUN set -eux; \
         zstd; \
     rm -rf /var/lib/apt/lists/*
 
+RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+    | sh -s -- -b /usr/local/bin
+
 RUN set -eux; \
     case "$(uname -m)" in \
         x86_64|amd64) triple="x86_64-unknown-linux-musl" ;; \

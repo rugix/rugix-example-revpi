@@ -22,6 +22,9 @@ actions:
       - curl
       - jq
       - util-linux
+      {{- if eq $provisioning "true" }}
+      - firewalld
+      {{- end }}
 
   - action: overlay
     description: Install Nexigon files
@@ -31,38 +34,55 @@ actions:
     description: Configure Nexigon Agent and OTA
     chroot: false
     command: |
+      provisioning="{{ $provisioning }}"
       env_file="${NEXIGON_ENV_FILE:-.env}"
-      if [ ! -f "$env_file" ]; then
+      if [ -f "$env_file" ]; then
+          set -a
+          # shellcheck source=/dev/null
+          . "$env_file"
+          set +a
+      elif [ "$provisioning" != "true" ]; then
           echo "[ERROR] Nexigon config '$env_file' not found; copy env.template to .env"
           exit 1
       fi
 
-      set -a
-      # shellcheck source=/dev/null
-      . "$env_file"
-      set +a
+      toml_escape() {
+          printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+      }
 
-      if [ -z "${NEXIGON_HUB_URL:-}" ]; then
-          echo "[ERROR] NEXIGON_HUB_URL is not set"
-          exit 1
-      fi
-      if [ -z "${NEXIGON_TOKEN:-}" ]; then
-          echo "[ERROR] NEXIGON_TOKEN is not set"
-          exit 1
-      fi
-      if [ -z "${NEXIGON_REPOSITORY:-}" ]; then
-          echo "[ERROR] NEXIGON_REPOSITORY is not set"
-          exit 1
-      fi
-      if [ -z "${NEXIGON_PACKAGE:-}" ]; then
-          echo "[ERROR] NEXIGON_PACKAGE is not set"
-          exit 1
+      if [ "$provisioning" != "true" ]; then
+          if [ -z "${NEXIGON_HUB_URL:-}" ]; then
+              echo "[ERROR] NEXIGON_HUB_URL is not set"
+              exit 1
+          fi
+          if [ -z "${NEXIGON_TOKEN:-}" ]; then
+              echo "[ERROR] NEXIGON_TOKEN is not set"
+              exit 1
+          fi
+          if [ -z "${NEXIGON_REPOSITORY:-}" ]; then
+              echo "[ERROR] NEXIGON_REPOSITORY is not set"
+              exit 1
+          fi
+          if [ -z "${NEXIGON_PACKAGE:-}" ]; then
+              echo "[ERROR] NEXIGON_PACKAGE is not set"
+              exit 1
+          fi
       fi
 
-      sed -i \
-          -e "s@%%HUB_URL%%@${NEXIGON_HUB_URL}@g" \
-          -e "s@%%TOKEN%%@${NEXIGON_TOKEN}@g" \
-          "$ROOTDIR"/etc/nexigon/agent.toml
+      cat >"$ROOTDIR"/etc/nexigon/agent.toml <<'EOF'
+      #:schema https://raw.githubusercontent.com/nexigon/nexigon/refs/heads/main/schemas/nexigon-agent.schema.json
+
+      fingerprint-script = "/usr/libexec/nexigon/nexigon-device-fingerprint"
+      EOF
+
+      if [ -n "${NEXIGON_HUB_URL:-}" ]; then
+          printf 'hub-url = "%s"\n' "$(toml_escape "$NEXIGON_HUB_URL")" \
+              >>"$ROOTDIR"/etc/nexigon/agent.toml
+      fi
+      if [ -n "${NEXIGON_TOKEN:-}" ]; then
+          printf 'token = "%s"\n' "$(toml_escape "$NEXIGON_TOKEN")" \
+              >>"$ROOTDIR"/etc/nexigon/agent.toml
+      fi
 
       cat >>"$ROOTDIR"/etc/nexigon/agent.toml <<'EOF'
 
@@ -87,9 +107,15 @@ actions:
       sed -i "s|@@TIMEOUT@@|{{ $watchdog_timeout }}|g" \
           "$ROOTDIR"/usr/lib/systemd/system/nexigon-rugix-watchdog.timer
 
-      cat >"$ROOTDIR"/etc/nexigon-rugix-ota.json <<EOF
+      if [ -n "${NEXIGON_REPOSITORY:-}" ] && [ -n "${NEXIGON_PACKAGE:-}" ]; then
+          cat >"$ROOTDIR"/etc/nexigon-rugix-ota.json <<EOF
       {"path": "${NEXIGON_REPOSITORY}/${NEXIGON_PACKAGE}/{{ $tag }}", "rugix": {"useBundleHash": true}}
       EOF
+      else
+          cat >"$ROOTDIR"/etc/nexigon-rugix-ota.json <<'EOF'
+      {"rugix": {"useBundleHash": true}}
+      EOF
+      fi
 
       install -d "$ROOTDIR"/etc/rugix
       cat >"$ROOTDIR"/etc/rugix/system-build-info.json <<EOF
@@ -101,9 +127,14 @@ actions:
     description: Open Nexigon provisioning pairing port
     chroot: true
     command: |
-      if command -v firewall-offline-cmd >/dev/null 2>&1; then
+      if ! command -v firewall-offline-cmd >/dev/null 2>&1; then
+          echo "[ERROR] firewall-offline-cmd is required for Nexigon provisioning" >&2
+          exit 1
+      fi
+      if ! firewall-offline-cmd --query-port=51337/tcp >/dev/null 2>&1; then
           firewall-offline-cmd --add-port=51337/tcp
       fi
+      systemctl enable firewalld.service
   {{- end }}
 
   - action: run

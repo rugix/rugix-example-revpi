@@ -118,6 +118,11 @@ elif [ "$PREV_STATE" == "installing" ] || [ "$PREV_STATE" == "rebooting" ] || [ 
 fi
 
 VERSION_PATH=$(echo "$OTA_CONFIG" | jq -r '.path')
+if [ -z "$VERSION_PATH" ] || [ "$VERSION_PATH" = "null" ]; then
+    echo "[INFO] no OTA repository path configured" >&2
+    set_status '.state = "idle" | .targetVersion = null | .lastError = null'
+    exit 0
+fi
 
 emit_event "checking for updates" \
     "path" "$VERSION_PATH" \

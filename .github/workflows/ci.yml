@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RUGIX_VERSION: v1.3.0-dev.2
+
+jobs:
+  app-bundle:
+    name: Build App Bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - name: Install Rugix Bundler
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$(uname -m)" in
+              x86_64|amd64) triple="x86_64-unknown-linux-musl" ;;
+              aarch64|arm64) triple="aarch64-unknown-linux-musl" ;;
+              *) echo "unsupported runner architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
+
+          mkdir -p .tools
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "${tmpdir}"' EXIT
+
+          curl -fsSL \
+              "https://github.com/rugix/rugix/releases/download/${RUGIX_VERSION}/binaries-${triple}.tar" \
+              -o "${tmpdir}/rugix-binaries.tar"
+          tar -xf "${tmpdir}/rugix-binaries.tar" -C "${tmpdir}"
+
+          bundler="$(find "${tmpdir}" -type f -name rugix-bundler -perm -111 | head -n 1)"
+          if [ -z "${bundler}" ]; then
+              echo "rugix-bundler not found in release archive" >&2
+              exit 1
+          fi
+          install -m 0755 "${bundler}" .tools/rugix-bundler
+
+      - name: Build app bundle
+        env:
+          CONTAINER_RUNTIME: docker
+          RUGIX_BUNDLER: ${{ github.workspace }}/.tools/rugix-bundler
+        run: apps/revpi-dio-grafana/build.sh
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: revpi-dio-grafana-app
+          path: |
+            apps/revpi-dio-grafana/build/revpi-dio-grafana.rugixb
+            apps/revpi-dio-grafana/build/revpi-dio-grafana.rugixb-hash
+          if-no-files-found: error
+          compression-level: 0
+
+  debos:
+    name: Build Debos Image (${{ matrix.variant }})
+    runs-on: [self-hosted, nixos]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: rugix-apps
+            output: revpi-rugix-apps
+            nexigon: "false"
+          - variant: rugix-apps-nexigon
+            output: revpi-rugix-apps-nexigon
+            nexigon: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build debos image and bundle
+        working-directory: os/debos
+        env:
+          NEXIGON: ${{ matrix.nexigon }}
+          OUTPUT: ${{ matrix.output }}
+        run: |
+          set -euo pipefail
+          version="ci-${OUTPUT}-${GITHUB_SHA::12}"
+
+          args=(
+              -tflavour:lite
+              -ttype:rugix
+              -tdocker:true
+              -trugix_apps:true
+              -trugix_admin:true
+              -tgen_sbom:true
+              -toutput:"${OUTPUT}"
+              -tversion:"${version}"
+          )
+          if [ "${NEXIGON}" = "true" ]; then
+              args+=(
+                  -tnexigon:true
+                  -tnexigon_provisioning:true
+              )
+          fi
+
+          ./run-debos "${args[@]}" revpi.yaml
+
+      - name: Collect debos artifacts
+        working-directory: os/debos
+        env:
+          OUTPUT: ${{ matrix.output }}
+        run: |
+          set -euo pipefail
+
+          rm -rf dist
+          mkdir -p dist
+          for src in build/"${OUTPUT}".* build/packages_"${OUTPUT}".csv build/sbom-"${OUTPUT}".json; do
+              if [ -e "${src}" ]; then
+                  cp "${src}" dist/
+              fi
+          done
+
+          if ! find dist -type f -print -quit | grep -q .; then
+              echo "no debos artifacts found" >&2
+              exit 1
+          fi
+
+      - name: Upload debos artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.output }}
+          path: os/debos/dist/
+          if-no-files-found: error
+          compression-level: 0
