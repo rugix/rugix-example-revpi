@@ -5,9 +5,6 @@ ARG RUGIX_VERSION=v1.3.0-dev.2
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN groupadd --gid 1000 build \
-    && useradd --uid 1000 --gid 1000 --create-home --shell /bin/bash build
-
 RUN set -eux; \
     apt-get update; \
     apt-get install --no-install-recommends -y \
