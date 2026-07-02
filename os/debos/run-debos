@@ -67,7 +67,12 @@ fi
     -f "${ROOT}/Dockerfile" \
     "${ROOT}"
 
-podman_flags=(--rm --entrypoint /bin/bash)
+podman_flags=(
+    --rm
+    --userns=keep-id:uid=1000,gid=1000
+    --user build
+    --entrypoint /bin/bash
+)
 if [ -e /dev/kvm ]; then
     podman_flags+=(--device /dev/kvm)
 fi
