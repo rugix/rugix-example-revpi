@@ -8,7 +8,7 @@
 {{- $tag := or .tag "stable" -}}
 {{- $interval := or .interval "4h" -}}
 {{- $watchdog_timeout := or .watchdog_timeout "300" -}}
-{{- $agent_version := or .agent_version "v0.5" -}}
+{{- $agent_version := or .agent_version "git-e6ab0e7" -}}
 {{- $provisioning := or .provisioning "false" -}}
 
 architecture: {{ $arch }}

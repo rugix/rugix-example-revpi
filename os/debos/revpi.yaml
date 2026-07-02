@@ -62,7 +62,7 @@
 {{- $nexigon_tag := or .nexigon_tag "stable" -}}
 {{- $nexigon_interval := or .nexigon_interval "4h" -}}
 {{- $nexigon_watchdog_timeout := or .nexigon_watchdog_timeout "300" -}}
-{{- $nexigon_agent_version := or .nexigon_agent_version "v0.5" -}}
+{{- $nexigon_agent_version := or .nexigon_agent_version "git-e6ab0e7" -}}
 {{- $nexigon_provisioning := or .nexigon_provisioning "false" -}}
 {{- $rugix_admin := or .rugix_admin "false" -}}
 {{- $rugix_admin_address := or .rugix_admin_address "0.0.0.0:8088" -}}
