@@ -23,6 +23,12 @@ actions:
       arch: {{ $arch }}
       output: {{ $output }}
 
+  {{ if eq $pack "true" }}
+  - action: pack
+    description: Pack rootfs into tarball
+    file: {{ $output }}.tar.gz
+  {{ end }}
+
   {{ if eq $image "true" }}
   - action: filesystem-deploy
     description: Deploy file system onto image
@@ -84,12 +90,6 @@ actions:
       -o json="$ARTIFACTDIR"/vuln-"{{ $output }}".json
       "$ARTIFACTDIR"/sbom-"{{ $output }}".json
   {{ end }}
-  {{ end }}
-
-  {{ if eq $pack "true" }}
-  - action: pack
-    description: Pack rootfs into tarball
-    file: {{ $output }}.tar.gz
   {{ end }}
 
   # TODO: shrink image size

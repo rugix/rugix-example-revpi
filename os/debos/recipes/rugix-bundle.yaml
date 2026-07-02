@@ -10,68 +10,10 @@ architecture: {{ $arch }}
 actions:
   {{/* Create a rugix bundle for updating systems */}}
   - action: run
-    description: Create bundle directory
-    chroot: false
-    command: mkdir -p "$ARTIFACTDIR"/bundle-"{{ $output }}"/payloads
-
-  - action: run
-    description: Pack boot partition
-    chroot: false
-    command: cp -v /dev/vda2 "$ARTIFACTDIR"/bundle-"{{ $output }}"/payloads/boot-"{{ $output }}"
-
-  - action: run
-    description: Pack system partition
-    chroot: false
-    command: cp -v /dev/vda4 "$ARTIFACTDIR"/bundle-"{{ $output }}"/payloads/system-"{{ $output }}"
-
-  - action: run
-    description: Write bundle manifest
-    chroot: false
-    command: |
-      cat > "$ARTIFACTDIR"/bundle-"{{ $output }}"/rugix-bundle.toml <<- __EOF__
-      update-type = "full"
-      hash-algorithm = "sha512-256"
-
-      [[payloads]]
-      filename = "boot-{{ $output }}"
-      [payloads.delivery]
-      type = "slot"
-      slot = "boot"
-      [payloads.block-encoding]
-      hash-algorithm = "sha512-256"
-      chunker = "casync-64"
-      compression = { type = "xz", level = 9 }
-      deduplication = true
-
-      [[payloads]]
-      filename = "system-{{ $output }}"
-      [payloads.delivery]
-      type = "slot"
-      slot = "system"
-      [payloads.block-encoding]
-      hash-algorithm = "sha512-256"
-      chunker = "casync-64"
-      compression = { type = "xz", level = 9 }
-      deduplication = true
-      __EOF__
-
-  - action: run
-    description: Create the bundle
-    chroot: false
-    command: rugix-bundler bundle
-      "$ARTIFACTDIR"/bundle-"{{ $output }}"
-      "$ARTIFACTDIR"/"{{ $output }}".rugixb
-
-  - action: run
-    description: Create bundle hash
-    chroot: false
-    command: rugix-bundler hash
-      "$ARTIFACTDIR"/"{{ $output }}".rugixb
-      > "$ARTIFACTDIR"/"{{ $output }}".rugixb-hash
-
-  - action: run
-    description: Keep legacy bundle artifact name
-    chroot: false
-    command: |
-      cp "$ARTIFACTDIR"/"{{ $output }}".rugixb "$ARTIFACTDIR"/bundle-"{{ $output }}".rugixb
-      cp "$ARTIFACTDIR"/"{{ $output }}".rugixb-hash "$ARTIFACTDIR"/bundle-"{{ $output }}".rugixb-hash
+    description: Create rugix bundle
+    postprocess: true
+    script: create-rugix-bundle.sh
+      "$ARTIFACTDIR"
+      "{{ $output }}"
+      boot-a
+      system-a

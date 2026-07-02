@@ -4,6 +4,12 @@ Files: overlays/nexigon/*
 Copyright: 2023 Silitics GmbH
 License: MIT OR Apache-2.0
 
+Files:
+ overlays/rugix/usr/lib/rugix/scripts/hydrate-ssh-host-keys.sh
+ overlays/rugix/usr/lib/systemd/system/hydrate-ssh-host-keys.service
+Copyright: 2023 Silitics GmbH
+License: MIT OR Apache-2.0
+
 Files: overlays/*
 Copyright: 2024-2026 KUNBUS GmbH
 License: GPL-2.0-or-later

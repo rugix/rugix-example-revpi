@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+[Unit]
+Description=Initialize RevPi Identity for Rugix
+DefaultDependencies=no
+After=local-fs.target systemd-tmpfiles-setup.service
+Before=sysinit.target network-pre.target getty.target ssh.service
+ConditionPathExists=!/var/lib/revpi/rugix-first-boot-complete
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/rugix/scripts/initialize-revpi-identity.sh
+
+[Install]
+WantedBy=sysinit.target

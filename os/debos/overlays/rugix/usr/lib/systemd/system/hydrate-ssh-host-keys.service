@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2023 Silitics GmbH
+#
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[Unit]
+Description=Hydrate SSH Host Keys
+Before=ssh.service sshd.service sshd-keygen.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/rugix/scripts/hydrate-ssh-host-keys.sh
+
+[Install]
+WantedBy=multi-user.target

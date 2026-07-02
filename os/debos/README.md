@@ -11,11 +11,12 @@ This directory contains the debos workflow for Rugix-managed Revolution Pi
 images. It is a practical starting point for trying full-system updates, Rugix
 Apps, Rugix Admin, and optional Nexigon fleet management on real RevPi hardware.
 
-This workflow builds on KUNBUS's Rugix integration branch for the RevPi debos
-workflow, specifically the
-[`feature/REVPI-4843/rugix`](https://gitlab.com/revolutionpi/debos-build/-/tree/feature/REVPI-4843/rugix)
-branch of `revolutionpi/debos-build`. This repository keeps the familiar RevPi
-flavours and package setup, then adds:
+This workflow builds on KUNBUS's REVPI-4862 Rugix integration work for the RevPi
+debos workflow, specifically this
+[`revolutionpi/debos-build` tree snapshot](https://gitlab.com/revolutionpi/debos-build/-/tree/2664b4968b5c5ef48ccc425c70cf5fafbb701bb4).
+This repository uses that work's Rugix image layout, bootstrapping, and bundle
+generation changes. It keeps the familiar RevPi flavours and package setup,
+then adds:
 
 - A Rugix-compatible partition layout and boot configuration.
 - A/B system updates with Raspberry Pi `tryboot`.
@@ -27,7 +28,7 @@ flavours and package setup, then adds:
 The Rugix image layout uses Raspberry Pi `tryboot` for A/B system updates. Updates
 are written to the inactive system slot, and the device can fall back if the new
 system does not boot. The example image also keeps selected system state
-persistent across updates and factory resets.
+persistent across updates and Rugix factory resets.
 
 The easiest way to start is to flash a prebuilt image from this repository's
 GitHub releases page. Build locally only when you want to customize the image or
@@ -72,8 +73,8 @@ user: pi
 password: revolutionpi
 ```
 
-The RevPi first-login setup resets those demo credentials to the
-machine-specific defaults for the device.
+On first boot, the image sets the hostname from the RevPi serial number when it
+can read the device's HAT EEPROM. It does not rewrite the `pi` password.
 
 After boot, Rugix Admin is available at:
 

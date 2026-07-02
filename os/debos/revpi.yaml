@@ -70,13 +70,15 @@
 {{- if eq $rugix_apps "true" -}}
   {{- $docker = "true" -}}
 {{- end -}}
-{{/* Rugix bundles only make sense if the image is a Rugix image */}}
+{{/* Rugix bundles and integrations only make sense if the image is a Rugix image */}}
 {{- if ne $type "rugix" -}}
   {{- $rugix_bundle = "false" -}}
   {{- $nexigon = "false" -}}
   {{- $nexigon_provisioning = "false" -}}
   {{- $rugix_admin = "false" -}}
   {{- $rugix_apps = "false" -}}
+{{- else -}}
+  {{- $image_partition_type = "gpt" -}}
 {{- end -}}
 
 {{/* Genearting a vulnerability report always generates an SBOM as well */}}

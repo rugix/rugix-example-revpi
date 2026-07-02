@@ -1,20 +1,39 @@
+# RevPi device-local state, including Rugix's first-boot marker and the
+# stock-compatible factory-reset marker.
 [[persist]]
-file = "/etc/revpi/factory-reset"
+directory = "/var/lib/revpi"
+
+# Local device identity.
+[[persist]]
+file = "/etc/hostname"
 
 [[persist]]
-file = "/etc/ssh/ssh_host_ecdsa_key"
+file = "/etc/hosts"
+
+# PiCtory stores the active RevPi configuration in this project directory.
+# /etc/revpi/config.rsc is only a symlink into this location.
+[[persist]]
+directory = "/var/www/revpi/pictory/projects"
 
 [[persist]]
-file = "/etc/ssh/ssh_host_ecdsa_key.pub"
+directory = "/var/www/revpi/pictory/export"
+
+# Service configuration commonly changed through RevPi tooling.
+[[persist]]
+directory = "/etc/revpipyload"
 
 [[persist]]
-file = "/etc/ssh/ssh_host_ed25519_key"
+directory = "/var/lib/revpipyload"
 
 [[persist]]
-file = "/etc/ssh/ssh_host_ed25519_key.pub"
+file = "/etc/default/revpipyload"
 
 [[persist]]
-file = "/etc/ssh/ssh_host_rsa_key"
+file = "/etc/default/mqtt-revpi-client"
 
 [[persist]]
-file = "/etc/ssh/ssh_host_rsa_key.pub"
+file = "/etc/default/opcua-revpi-server"
+
+# Local network profiles are device configuration, not image content.
+[[persist]]
+directory = "/etc/NetworkManager/system-connections"

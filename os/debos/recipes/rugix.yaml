@@ -22,8 +22,10 @@ actions:
   - action: run
     description: Set rugix-ctrl as init
     chroot: false
-    command: >
-      echo "init=/usr/bin/rugix-ctrl" >> "$ROOTDIR"/boot/firmware/cmdline.txt
+    command:
+      sed -i
+        -e 's,$, init=/usr/bin/rugix-ctrl,'
+        "$ROOTDIR"/boot/firmware/cmdline.txt
 
   - action: run
     description: Set root partition to partition 4
@@ -35,6 +37,26 @@ actions:
   - action: overlay
     description: Install rugix configuration files
     source: ../overlays/rugix
+
+  - action: run
+    description: Store RevPi mutable state under /var/lib/revpi
+    chroot: false
+    command: |
+      install -d -m 0755 "$ROOTDIR"/var/lib/revpi
+      rm -rf "$ROOTDIR"/usr/share/revpi/devinfo
+      ln -sfn /var/lib/revpi/devinfo "$ROOTDIR"/usr/share/revpi/devinfo
+      rm -f "$ROOTDIR"/usr/share/revpi/factory-reset
+      ln -sfn /var/lib/revpi/factory-reset "$ROOTDIR"/usr/share/revpi/factory-reset
+      rm -f "$ROOTDIR"/etc/sudoers.d/051_revpi-factory-reset
+
+  - action: run
+    description: Enable Rugix first-boot services
+    chroot: true
+    command: |
+      if systemctl cat regenerate_ssh_host_keys.service >/dev/null 2>&1; then
+        systemctl disable regenerate_ssh_host_keys.service || true
+      fi
+      systemctl enable hydrate-ssh-host-keys.service rugix-revpi-first-boot.service
 
   - action: run
     description: Use correct system partition size in bootstrapping.toml
