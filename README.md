@@ -89,9 +89,12 @@ Rugix has been created and is maintained by [Silitics](https://silitics.com). Lo
 
 ## Licensing
 
-This project is licensed under either [MIT](https://github.com/rugix/rugix/blob/main/LICENSE-MIT) or [Apache 2.0](https://github.com/rugix/rugix/blob/main/LICENSE-APACHE) at your option.
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this project by you, as defined in the Apache 2.0 license, shall be dual licensed as above, without any additional terms or conditions.
+This repository contains files under multiple licenses. Files derived from or
+based on the KUNBUS Revolution Pi debos workflow are licensed under
+GPL-2.0-or-later as indicated by their SPDX headers and the REUSE metadata in
+`os/debos`. Other original Rugix/Silitics material is licensed under either MIT or Apache
+2.0 at your option, unless a file states a different license. Check the SPDX
+headers for the authoritative per-file license.
 
 ---
 
