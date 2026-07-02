@@ -8,10 +8,10 @@ fault-tolerant application updates and full OS updates. They also provide an
 optional ready-made [Nexigon](https://nexigon.cloud) integration for
 orchestrating fleet-wide OTA updates and remote device access.
 
-The [app example](./apps/revpi-dio-grafana) shows how to package a Docker Compose
-workload as a Rugix App bundle. The example reads RevPi DIO inputs and counters,
-exposes a simple Python-based Web UI showing the inputs and providing output controls,
-writes measurements to InfluxDB, and ships a Grafana dashboard.
+The [app example](./apps/revpi-dio-grafana) packages a Docker Compose workload
+as a Rugix App bundle. It reads RevPi DIO inputs and counters, exposes a small
+Python web UI for viewing inputs and controlling outputs, writes measurements to
+InfluxDB, and includes a Grafana dashboard.
 
 The [debos example](./os/debos) shows how to build a Rugix-managed RevPi OS image from the
 RevPi debos workflow. Beyond the standard workflow, it provides recipes for the Rugix Apps
