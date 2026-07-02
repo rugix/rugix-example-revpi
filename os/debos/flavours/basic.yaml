@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2024-2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $suite := .suite -}}
+{{- $arch := .arch -}}
+{{- $user := .user -}}
+{{- $passwd := .passwd -}}
+{{- $hostname := .hostname -}}
+{{- $ospack := or .ospack "" -}}
+
+architecture: {{ $arch }}
+
+actions:
+  {{- if eq $ospack "" }}
+  - action: recipe
+    description: Recipe for minimal image
+    recipe: minimal.yaml
+    variables:
+      suite: {{ $suite }}
+      arch: {{ $arch }}
+      user: {{ $user }}
+      passwd: {{ $passwd }}
+      hostname: {{ $hostname }}
+  {{- else }}
+  - action: unpack
+    description: Unpack minimal ospack {{ $ospack }}
+    compression: gz
+    file: {{ $ospack }}
+  {{- end }}
+
+  - action: apt
+    description: Install basic Revolution Pi packages
+    recommends: true
+    packages:
+      - avahi-daemon
+      - netbase
+      - picontrol
+      - firewalld
+      - pitest
+      # revpi configuration
+      - pictory-apache
+      - revpi-modbus-client
+      - revpi-modbus-server
+      - revpi-webserver-firewalld
+      # Directly install cockpit to use it locally on port 9090 without revpi-webserver dependency
+      - cockpit-revpi
+      # Install the apache configuration to pull the revpi-webserver package into system
+      - cockpit-revpi-apache
+      # Install redirect, which the user can savly remove without autoremove revpi-webserver
+      - cockpit-revpi-redirect-apache
+      - cockpit-revpi-redirect-firewalld
+      # luxury packages
+      - file
+      - nano
+      - vim-tiny
+      - less
+      - iputils-ping
+      - bash-completion
+      - usbutils
+      - pciutils
+      - logrotate
+      - curl
+
+  # Package picontrol adds the group "picontrol" which is needed to interact
+  # with /dev/piControl0.
+  - action: run
+    description: Add default user to picontrol group
+    chroot: true
+    command: adduser "{{ $user }}" picontrol
+
+  - action: run
+    description: Start basic services on boot
+    chroot: true
+    command: systemctl enable avahi-daemon
+
+  - action: run
+    description: Firewall - Enable mdns service for AVAHI
+    chroot: true
+    command: firewall-offline-cmd --add-service=mdns
+
+  - action: run
+    description: Deactivate wide-area for avahi-daemon (RED-DA)
+    chroot: true
+    command: sed -i 's/^enable-wide-area=yes/enable-wide-area=no/' /etc/avahi/avahi-daemon.conf

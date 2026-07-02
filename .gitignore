@@ -1,0 +1,9 @@
+/build/
+apps/*/build/
+os/debos/fake-scratch.img.*
+/.rugix/
+/.runtime/
+/.tools/
+/.env
+/.nexigon-cli.toml
+/.release-env

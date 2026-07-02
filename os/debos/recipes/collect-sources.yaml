@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2024-2025 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $output := .output -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Collect sources
+    chroot: true
+    script: ./collect_sources.sh
+
+  - action: run
+    description: Move source archive to artifactdir
+    chroot: false
+    command:
+      mv "$ROOTDIR"/sources.tar "$ARTIFACTDIR"/sources-"{{ $output }}".tar
+
+  - action: run
+    description: Move package list to artifactdir
+    chroot: false
+    command:
+      mv "$ROOTDIR"/packages.csv
+        "$ARTIFACTDIR"/packages_"{{ $output }}".csv
+
+  - action: run
+    description: Compress source archive with zstd
+    chroot: false
+    command:
+      zstd -10 -zT0 --no-progress --rm
+        "$ARTIFACTDIR"/sources-"{{ $output }}".tar

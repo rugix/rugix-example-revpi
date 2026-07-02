@@ -1,0 +1,12 @@
+[Unit]
+Description=Recover interrupted Rugix app transitions
+After=multi-user.target rugix-apps-restore-units.service docker.service rugix-docker-runtime-components.service rugix-rpi-components.service rugix-revpi-components.service
+Wants=rugix-apps-restore-units.service rugix-docker-runtime-components.service rugix-rpi-components.service rugix-revpi-components.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rugix-ctrl apps recover
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

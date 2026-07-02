@@ -1,0 +1,9 @@
+[Unit]
+Description=Nexigon Rugix Watchdog Timer
+
+[Timer]
+OnBootSec=@@TIMEOUT@@s
+Unit=nexigon-rugix-watchdog.service
+
+[Install]
+WantedBy=timers.target

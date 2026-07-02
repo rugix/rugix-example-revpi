@@ -1,0 +1,10 @@
+[Unit]
+Description=Publish Raspberry Pi hardware component metadata for Rugix
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/rugix/rugix-rpi-components
+
+[Install]
+WantedBy=multi-user.target

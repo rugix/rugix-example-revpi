@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2024-2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $suite := .suite -}}
+
+architecture: {{ $arch }}
+
+actions:
+  # TODO: download signing keys on demand to make sure they are up-to-date
+  - action: overlay
+    description: Copy files for repositories
+    source: ../overlays/repositories
+
+  - action: run
+    description: Setup sources for suite {{ $suite }}
+    chroot: false
+    command: |
+      sed -i -e 's/SUITE/{{ $suite }}/g' \
+        "$ROOTDIR"/etc/apt/sources.list.d/*.sources \
+        "$ROOTDIR"/etc/apt/sources.list
+
+  # install the proper repository files again so they're tracked by a package
+  - action: apt
+    description: Install files for revpi repository through package
+    recommends: true
+    update: true
+    packages:
+      - revpi-repo
+
+  # remove revpi repositories because they were installed with the package
+  # revpi-repo
+  - action: run
+    description: Remove temporary revpi repository files
+    chroot: false
+    command: |
+      rm -f "$ROOTDIR"/etc/apt/sources.list.d/_revpi.sources \
+        "$ROOTDIR"/usr/share/keyrings/_revpi-keyring.gpg
+
+  - action: apt
+    description: Install keyrings for raspi repository through package
+    recommends: true
+    update: true
+    packages:
+      - raspberrypi-archive-keyring
+
+  - action: run
+    description: Use raspi's keyring from package
+    chroot: false
+    command:
+      sed -i -e 's,_\(raspberrypi-archive-keyring.gpg\),\1,g'
+        "$ROOTDIR"/etc/apt/sources.list.d/raspi.sources
+
+  - action: run
+    description: Remove temporary keyring for raspi repository
+    chroot: false
+    command:
+      rm -f "$ROOTDIR"/usr/share/keyrings/_raspberrypi-archive-keyring.gpg

@@ -1,0 +1,12 @@
+id = "app.revpi-dio-grafana"
+version = "0.0.1"
+
+[[requires]]
+id = "runtime.docker-compose"
+
+[[requires]]
+id = "hardware.revpi"
+
+[[requires]]
+id = "runtime.revpi.picontrol"
+version = ">=2"

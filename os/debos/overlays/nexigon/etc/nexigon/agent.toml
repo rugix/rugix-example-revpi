@@ -1,0 +1,6 @@
+#:schema https://raw.githubusercontent.com/nexigon/nexigon/refs/heads/main/schemas/nexigon-agent.schema.json
+
+hub-url = "%%HUB_URL%%"
+token = "%%TOKEN%%"
+
+fingerprint-script = "/usr/libexec/nexigon/nexigon-device-fingerprint"

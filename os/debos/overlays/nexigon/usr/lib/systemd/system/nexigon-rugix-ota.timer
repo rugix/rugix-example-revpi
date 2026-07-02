@@ -1,0 +1,11 @@
+[Unit]
+Description=Nexigon Rugix OTA Update Timer
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=@@INTERVAL@@
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

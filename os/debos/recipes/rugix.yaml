@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2026 KUNBUS GmbH
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: download
+    description: Download Rugix binaries
+    url: https://github.com/rugix/rugix/releases/download/v1.3.0-dev.2/binaries-aarch64-unknown-linux-musl.tar
+    name: rugix-binaries
+    unpack: true
+
+  - action: overlay
+    description: Install Rugix binaries into image
+    origin: rugix-binaries
+    destination: /usr/bin/
+
+  - action: run
+    description: Set rugix-ctrl as init
+    chroot: false
+    command: >
+      echo "init=/usr/bin/rugix-ctrl" >> "$ROOTDIR"/boot/firmware/cmdline.txt
+
+  - action: run
+    description: Set root partition to partition 4
+    chroot: false
+    command: sed -i
+      -e 's,\(root=\)[^ ]\+,\1/dev/mmcblk0p4,g'
+      "$ROOTDIR"/boot/firmware/cmdline.txt
+
+  - action: overlay
+    description: Install rugix configuration files
+    source: ../overlays/rugix
+
+  - action: run
+    description: Use correct system partition size in bootstrapping.toml
+    chroot: false
+    command: sed -i
+      -e "s/SYSTEM_SIZE/$(blockdev --getsize64 /dev/vda4)/g"
+      "$ROOTDIR"/etc/rugix/bootstrapping.toml
+
+  - action: run
+    description: Copy autoboot.txt to config partition
+    chroot: false
+    command: mkdir -p "$ROOTDIR"/run/rugix/mounts/config
+      && cp
+        "$ROOTDIR"/boot/firmware/autoboot.txt
+        "$ROOTDIR"/run/rugix/mounts/config/
+
+  - action: apt
+    description: Install fdisk for various rugix-ctrl commands
+    recommends: true
+    packages:
+      - fdisk
+
+  # this is only relevant for images of type "revpi" for now. disable it so it
+  # doesn't run when a rugix image is built.
+  - action: run
+    chroot: true
+    command: systemctl mask revpi-resize-fs.service

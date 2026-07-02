@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: apt
+    description: Install Docker prerequisites
+    recommends: true
+    packages:
+      - ca-certificates
+      - curl
+      - kmod
+
+  - action: run
+    description: Install Docker
+    chroot: true
+    command: |
+      if ! command -v docker >/dev/null 2>&1; then
+          curl -fsSL https://test.docker.com -o /tmp/install-docker.sh
+          sh /tmp/install-docker.sh
+      fi
+
+  - action: run
+    description: Enable Docker
+    chroot: true
+    command: systemctl enable docker

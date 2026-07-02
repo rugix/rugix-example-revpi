@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PODMAN="${PODMAN:-podman}"
+DEBOS_ARTIFACT_DIR="${DEBOS_ARTIFACT_DIR:-build}"
+DEBOS_MEMORY="${DEBOS_MEMORY:-10Gb}"
+DEBOS_SCRATCHSIZE="${DEBOS_SCRATCHSIZE:-15Gb}"
+RUGIX_VERSION="${RUGIX_VERSION:-v1.3.0-dev.2}"
+DEBOS_BASE_IMAGE="${DEBOS_BASE_IMAGE:-docker.io/godebos/debos:v1.1.6}"
+DEBOS_IMAGE="${DEBOS_IMAGE:-localhost/rugix-revpi-debos:${RUGIX_VERSION}}"
+
+if ! command -v "${PODMAN}" >/dev/null 2>&1; then
+    echo "[ERROR] podman not found; install Podman or set PODMAN=/path/to/podman" >&2
+    exit 1
+fi
+
+has_arg() {
+    local prefix="$1"
+    shift
+    local arg
+    for arg in "$@"; do
+        case "${arg}" in
+            "${prefix}"|"${prefix}"=*) return 0 ;;
+        esac
+    done
+    return 1
+}
+
+args=()
+needs_artifact_dir=true
+is_dry_run=false
+if has_arg "--dry-run" "$@"; then
+    is_dry_run=true
+fi
+if has_arg "--help" "$@" || has_arg "-h" "$@"; then
+    args+=("$@")
+    needs_artifact_dir=false
+else
+    if [ "${is_dry_run}" != "true" ] && ! has_arg "--artifactdir" "$@"; then
+        args+=("--artifactdir=${DEBOS_ARTIFACT_DIR}")
+    fi
+    if ! has_arg "--memory" "$@"; then
+        args+=("--memory=${DEBOS_MEMORY}")
+    fi
+    if ! has_arg "--scratchsize" "$@"; then
+        args+=("--scratchsize=${DEBOS_SCRATCHSIZE}")
+    fi
+    if [ "$#" -eq 0 ]; then
+        args+=("revpi.yaml")
+    else
+        args+=("$@")
+    fi
+    if [ "${is_dry_run}" = "true" ]; then
+        needs_artifact_dir=false
+    fi
+fi
+
+if [ "${needs_artifact_dir}" = "true" ] && [[ "${DEBOS_ARTIFACT_DIR}" != /* ]]; then
+    mkdir -p "${ROOT}/${DEBOS_ARTIFACT_DIR}"
+fi
+
+"${PODMAN}" build \
+    --build-arg "DEBOS_BASE_IMAGE=${DEBOS_BASE_IMAGE}" \
+    --build-arg "RUGIX_VERSION=${RUGIX_VERSION}" \
+    -t "${DEBOS_IMAGE}" \
+    -f "${ROOT}/Dockerfile" \
+    "${ROOT}"
+
+podman_flags=(--rm --entrypoint /bin/bash)
+if [ -e /dev/kvm ]; then
+    podman_flags+=(--device /dev/kvm)
+fi
+if [ -t 0 ] && [ -t 1 ]; then
+    podman_flags+=(-it)
+fi
+
+exec "${PODMAN}" run "${podman_flags[@]}" \
+    -v "${ROOT}:/project" \
+    -w /project \
+    -e DEBIAN_FRONTEND=noninteractive \
+    "${DEBOS_IMAGE}" \
+    -lc 'exec debos "$@"' \
+    debos "${args[@]}"

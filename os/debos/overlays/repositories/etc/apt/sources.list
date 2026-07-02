@@ -1,0 +1,10 @@
+deb https://deb.debian.org/debian SUITE main
+#deb-src https://deb.debian.org/debian SUITE main
+
+deb http://security.debian.org/debian-security SUITE-security main
+#deb-src http://security.debian.org/debian-security SUITE-security main
+
+# SUITE-updates, to get updates before a point release is made;
+# see https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_updates_and_backports
+deb http://deb.debian.org/debian SUITE-updates main
+#deb-src http://deb.debian.org/debian SUITE-updates main

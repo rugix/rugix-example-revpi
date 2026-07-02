@@ -1,0 +1,6 @@
+[Unit]
+Description=Nexigon Rugix Watchdog (auto-rollback uncommitted systems)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nexigon/nexigon-rugix-watchdog

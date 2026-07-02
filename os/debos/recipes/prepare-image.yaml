@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $output := .output -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Embed output name
+    chroot: true
+    command:
+      mkdir -p /etc/revpi && printf "%s\n" "{{ $output }}"
+        > /etc/revpi/image-release
+
+  - action: run
+    description: Clean up image
+    chroot: true
+    command:
+      rm -rf
+        /var/cache/apt/archives/*.deb
+        /var/cache/apt/*.bin
+        /var/lib/apt/lists/*
+        /tmp/*
+        /var/tmp/*
+
+  # Delete the SSH host keys from the machine.
+  #
+  # The SSH host keys need to be regenerated when the device with the flashed
+  # image is booted for the first time; otherwise, SSH will not function
+  # properly. This can be done with the command "ssh-keygen -A".
+  - action: run
+    description: Remove SSH host keys
+    chroot: false
+    command: 'rm -f "$ROOTDIR"/etc/ssh/ssh_host_*_key*'
+
+  # Write "uninitialized\n" to `/etc/machine-id` in the image.
+  #
+  # `/etc/machine-id` needs to be uninitialized to ensure that the first boot
+  # after flashing the image to a RevPi device is detected properly. systemd
+  # overlays a bind-mount with a generated machine-id in the initrd while /etc
+  # is mounted read-only, and later commits this transient machine-id to disk
+  # after systemd-remount-fs.service(8) through
+  # systemd-machine-id-commit.service(8).
+  #
+  # We depend on this for the systemd service `revpi-resize-fs.service`, among
+  # others, that is installed with the package `revpi-tools` to resize the
+  # filesystem to occupy all empty space on the first boot.
+  #
+  # More information can be found in `machine-id(5)` in the section "FIRST BOOT
+  # SEMANTICS".
+  - action: run
+    description: Write "uninitialized\n" to /etc/machine-id
+    chroot: false
+    command: printf "uninitialized\n" > "$ROOTDIR"/etc/machine-id
+
+  - action: run
+    description: Remove /var/lib/dbus/machine-id
+    chroot: false
+    command: rm -f "$ROOTDIR"/var/lib/dbus/machine-id
+
+  # The file `/var/lib/systemd/random-seed` is used to initialize the entropy
+  # pool. This seed should be unique per installation and is not recommended to
+  # be shipped on images that are replicated to multiple systems as per
+  # systemd-random-seed(8).
+  - action: run
+    description: Delete /var/lib/systemd/random-seed
+    chroot: false
+    command: rm -f "$ROOTDIR"/var/lib/systemd/random-seed
+
+  # The file `/var/lib/systemd/credential.secret` is used to protect service
+  # credentials. It shouldn't exist in an image that is replicated to multiple
+  # systems and is automatically regenerated if a service credentials should be
+  # encrypted but the file doesn't exist.
+  - action: run
+    description: Delete /var/lib/systemd/credential.secret
+    chroot: false
+    command: rm -f "$ROOTDIR"/var/lib/systemd/credential.secret

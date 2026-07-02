@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2024-2025 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $hostname := .hostname -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: overlay
+    description: Install default settings (timezone, locale, keyboard)
+    source: ../overlays/defaults
+
+  - action: apt
+    description: Install minimal packages for system configuration
+    recommends: true
+    packages:
+      - locales
+      - keyboard-configuration
+
+  - action: run
+    description: Update timezone
+    chroot: true
+    command:
+      dpkg-reconfigure -fnoninteractive tzdata
+
+  - action: run
+    description: Set hostname
+    chroot: false
+    command: printf "%s\n" "{{ $hostname }}" > "$ROOTDIR"/etc/hostname
+
+  - action: run
+    description: Add hostname to /etc/hosts
+    chroot: false
+    command: |
+      sed -i -e 's/REVPIHOSTNAME/{{ $hostname }}/g' \
+        "$ROOTDIR"/etc/hosts
+
+  - action: run
+    description: Display IP address at login prompt
+    chroot: false
+    command: sed -i -e '1s/$/ \\4 \\6/' "$ROOTDIR"/etc/issue
+
+  - action: recipe
+    description: Create rfkill configuration
+    recipe: ../recipes/rfkill-configuration.yaml
+    variables:
+      arch: {{ $arch }}

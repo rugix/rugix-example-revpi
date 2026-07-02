@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# Triggers a rollback if the system is still uncommitted when this runs.
+# Invoked by nexigon-rugix-watchdog.timer after WATCHDOG_TIMEOUT seconds.
+
+set -euo pipefail
+
+SYSTEM_INFO=$(rugix-ctrl system info)
+ACTIVE=$(echo "$SYSTEM_INFO" | jq -r '.boot.activeGroup')
+DEFAULT=$(echo "$SYSTEM_INFO" | jq -r '.boot.defaultGroup')
+
+if [ "$ACTIVE" == "$DEFAULT" ]; then
+    echo "[INFO] system committed (active=$ACTIVE), nothing to do" >&2
+    exit 0
+fi
+
+echo "[WARN] system uncommitted after timeout (active=$ACTIVE, default=$DEFAULT), rebooting" >&2
+
+nexigon-agent events emit --category "ota" \
+    --severity "warning" \
+    --attribute "activeGroup=$(jq -n --arg v "$ACTIVE" '$v')" \
+    --attribute "defaultGroup=$(jq -n --arg v "$DEFAULT" '$v')" \
+    '"watchdog triggering rollback reboot"' || true
+
+reboot

@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2024-2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $suite := .suite -}}
+{{- $arch := .arch -}}
+{{- $user := .user -}}
+{{- $passwd := .passwd -}}
+{{- $hostname := .hostname -}}
+{{- $ospack := or .ospack "" -}}
+
+architecture: {{ $arch }}
+
+actions:
+  {{- if eq $ospack "" }}
+  - action: recipe
+    description: Recipe for lite image
+    recipe: lite.yaml
+    variables:
+      suite: {{ $suite }}
+      arch: {{ $arch }}
+      user: {{ $user }}
+      passwd: {{ $passwd }}
+      hostname: {{ $hostname }}
+  {{- else }}
+  - action: unpack
+    description: Unpack lite ospack {{ $ospack }}
+    compression: gz
+    file: {{ $ospack }}
+  {{- end }}
+
+  - action: apt
+    description: Install Revolution Pi packages for default image
+    recommends: true
+    packages:
+      # gui
+      - chromium
+      - rpi-chromium-mods
+      - revpi-ui
+      - revpicommander

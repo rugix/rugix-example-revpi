@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: 2024 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $suite := .suite -}}
+{{- $arch := .arch -}}
+{{- $user := .user -}}
+{{- $passwd := .passwd -}}
+{{- $hostname := .hostname -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: debootstrap
+    description: Prepare base with debootstrap
+    suite: {{ $suite }}
+    components:
+      - main
+    mirror: https://deb.debian.org/debian
+    variant: minbase
+
+  - action: recipe
+    description: Include repositories
+    recipe: ../recipes/add-repositories.yaml
+    variables:
+      arch: {{ $arch }}
+      suite: {{ $suite }}
+
+  - action: recipe
+    description: Bootstrap system packages
+    recipe: ../recipes/bootstrap-system-apt.yaml
+    variables:
+      arch: {{ $arch }}
+
+  - action: recipe
+    description: Populate /etc/machine-info
+    recipe: ../recipes/populate-machine-info.yaml
+    variables:
+      arch: {{ $arch }}
+
+  - action: apt
+    update: false
+    recommends: true
+    description: Install minimum packages for properly running system
+    packages:
+      # good to have
+      - busybox
+      - bash
+      - sudo
+      # networking
+      - network-manager
+      - wpasupplicant
+      - wireless-regdb
+      - systemd-timesyncd
+      - iproute2
+      # basic files needed for networking (NetworkManager)
+      - revpi-nm-config
+      # luxury packages
+      - openssh-server
+      - manpages
+      - man-db
+      - console-setup
+      # firmware
+      - firmware-brcm80211
+      - firmware-nxp
+      # Package management
+      - apt-utils
+
+  # NetworkManager keeps its own Wi-Fi state next to rfkill's state. It seems to
+  # assume that Wi-Fi is initially enabled, so it would override our rfkill
+  # settings.
+  # Override the state file's "WirelessEnabled" setting to turn off Wi-Fi
+  # initially.
+  - action: overlay
+    description: Set NetworkManager's Wi-Fi state to be initially disabled
+    source: ../overlays/networkmanager-wifi-disabled
+
+  - action: recipe
+    description: Create minimal system configuration
+    recipe: ../recipes/minimal-system-configuration.yaml
+    variables:
+      arch: {{ $arch }}
+      hostname: {{ $hostname }}
+
+  - action: recipe
+    description: Create and set up default user
+    recipe: ../recipes/setup-default-user.yaml
+    variables:
+      arch: {{ $arch }}
+      user: {{ $user }}
+      passwd: {{ $passwd }}
+
+  - action: run
+    description: Start minimal services on boot
+    chroot: true
+    command: systemctl enable ssh
+
+  - action: recipe
+    description: Install boot configuration
+    recipe: ../recipes/boot-configuration.yaml
+    variables:
+      arch: {{ $arch }}

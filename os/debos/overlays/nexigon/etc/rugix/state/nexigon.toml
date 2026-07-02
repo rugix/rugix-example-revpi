@@ -1,0 +1,5 @@
+[[persist]]
+directory = "/etc/nexigon/agent/ssl"
+
+[[persist]]
+directory = "/var/lib/nexigon"

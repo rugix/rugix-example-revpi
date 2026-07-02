@@ -1,0 +1,132 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $output := .output -}}
+{{- $version := .version -}}
+{{- $tag := or .tag "stable" -}}
+{{- $interval := or .interval "4h" -}}
+{{- $watchdog_timeout := or .watchdog_timeout "300" -}}
+{{- $agent_version := or .agent_version "v0.5" -}}
+{{- $provisioning := or .provisioning "false" -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: apt
+    description: Install Nexigon prerequisites
+    recommends: true
+    packages:
+      - ca-certificates
+      - curl
+      - jq
+      - util-linux
+
+  - action: overlay
+    description: Install Nexigon files
+    source: ../overlays/nexigon
+
+  - action: run
+    description: Configure Nexigon Agent and OTA
+    chroot: false
+    command: |
+      env_file="${NEXIGON_ENV_FILE:-.env}"
+      if [ ! -f "$env_file" ]; then
+          echo "[ERROR] Nexigon config '$env_file' not found; copy env.template to .env"
+          exit 1
+      fi
+
+      set -a
+      # shellcheck source=/dev/null
+      . "$env_file"
+      set +a
+
+      if [ -z "${NEXIGON_HUB_URL:-}" ]; then
+          echo "[ERROR] NEXIGON_HUB_URL is not set"
+          exit 1
+      fi
+      if [ -z "${NEXIGON_TOKEN:-}" ]; then
+          echo "[ERROR] NEXIGON_TOKEN is not set"
+          exit 1
+      fi
+      if [ -z "${NEXIGON_REPOSITORY:-}" ]; then
+          echo "[ERROR] NEXIGON_REPOSITORY is not set"
+          exit 1
+      fi
+      if [ -z "${NEXIGON_PACKAGE:-}" ]; then
+          echo "[ERROR] NEXIGON_PACKAGE is not set"
+          exit 1
+      fi
+
+      sed -i \
+          -e "s@%%HUB_URL%%@${NEXIGON_HUB_URL}@g" \
+          -e "s@%%TOKEN%%@${NEXIGON_TOKEN}@g" \
+          "$ROOTDIR"/etc/nexigon/agent.toml
+
+      cat >>"$ROOTDIR"/etc/nexigon/agent.toml <<'EOF'
+
+      [commands]
+      enabled = true
+
+      [terminal]
+      enabled = true
+      user = "root"
+      EOF
+
+      {{- if eq $provisioning "true" }}
+      cat >>"$ROOTDIR"/etc/nexigon/agent.toml <<'EOF'
+
+      [provisioning]
+      enabled = true
+      EOF
+      {{- end }}
+
+      sed -i "s|@@INTERVAL@@|{{ $interval }}|g" \
+          "$ROOTDIR"/usr/lib/systemd/system/nexigon-rugix-ota.timer
+      sed -i "s|@@TIMEOUT@@|{{ $watchdog_timeout }}|g" \
+          "$ROOTDIR"/usr/lib/systemd/system/nexigon-rugix-watchdog.timer
+
+      cat >"$ROOTDIR"/etc/nexigon-rugix-ota.json <<EOF
+      {"path": "${NEXIGON_REPOSITORY}/${NEXIGON_PACKAGE}/{{ $tag }}", "rugix": {"useBundleHash": true}}
+      EOF
+
+      install -d "$ROOTDIR"/etc/rugix
+      cat >"$ROOTDIR"/etc/rugix/system-build-info.json <<EOF
+      {"name": "{{ $output }}", "release": {"version": "{{ $version }}"}}
+      EOF
+
+  {{- if eq $provisioning "true" }}
+  - action: run
+    description: Open Nexigon provisioning pairing port
+    chroot: true
+    command: |
+      if command -v firewall-offline-cmd >/dev/null 2>&1; then
+          firewall-offline-cmd --add-port=51337/tcp
+      fi
+  {{- end }}
+
+  - action: run
+    description: Download Nexigon Agent
+    chroot: true
+    command: |
+      case "{{ $arch }}" in
+          amd64) target="x86_64-unknown-linux-gnu" ;;
+          arm64) target="aarch64-unknown-linux-gnu" ;;
+          *) echo "unsupported architecture: {{ $arch }}" >&2; exit 1 ;;
+      esac
+
+      curl -sfSL \
+          -o /usr/bin/nexigon-agent \
+          -H "X-Nexigon-Download: true" \
+          "https://downloads.nexigon.dev/nexigon-agent/{{ $agent_version }}/assets/${target}/nexigon-agent"
+      chmod 755 /usr/bin/nexigon-agent
+
+  - action: run
+    description: Enable Nexigon services
+    chroot: true
+    command: >
+      systemctl enable
+      nexigon-agent.service
+      nexigon-rugix-watchdog.timer
+      nexigon-rugix-ota.timer

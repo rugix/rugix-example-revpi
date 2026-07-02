@@ -1,0 +1,11 @@
+[Unit]
+Description=Publish Docker runtime component metadata for Rugix
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/rugix/rugix-docker-runtime-components
+
+[Install]
+WantedBy=multi-user.target

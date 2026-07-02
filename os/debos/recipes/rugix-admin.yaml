@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $address := or .address "0.0.0.0:8088" -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Install Rugix Admin service
+    chroot: false
+    command: |
+      address="{{ $address }}"
+      case "$address" in
+          *\"*)
+              echo "[ERROR] invalid Rugix Admin address: $address" >&2
+              exit 1
+              ;;
+      esac
+      if [ "$(printf '%s' "$address" | wc -l)" -ne 0 ]; then
+          echo "[ERROR] invalid Rugix Admin address: $address" >&2
+          exit 1
+      fi
+
+      if [ ! -x "$ROOTDIR"/usr/bin/rugix-admin ]; then
+          echo "[ERROR] rugix-admin binary is missing; build a Rugix image first" >&2
+          exit 1
+      fi
+
+      install -d "$ROOTDIR"/usr/lib/systemd/system
+      cat >"$ROOTDIR"/usr/lib/systemd/system/rugix-admin.service <<EOF
+      [Unit]
+      Description=Rugix Admin
+      ConditionFileIsExecutable=/usr/bin/rugix-admin
+
+      [Service]
+      ExecStart=/usr/bin/rugix-admin --address ${address}
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+      EOF
+
+  - action: run
+    description: Enable Rugix Admin
+    chroot: true
+    command: systemctl enable rugix-admin.service
+
+  - action: run
+    description: Open Rugix Admin firewall port
+    chroot: true
+    command: |
+      address="{{ $address }}"
+      port="${address##*:}"
+      case "$port" in
+          ""|*[!0-9]*)
+              echo "[ERROR] can not determine Rugix Admin TCP port from address: $address" >&2
+              exit 1
+              ;;
+      esac
+      if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+          echo "[ERROR] invalid Rugix Admin TCP port in address: $address" >&2
+          exit 1
+      fi
+
+      if command -v firewall-offline-cmd >/dev/null 2>&1; then
+          firewall-offline-cmd --add-port="${port}/tcp"
+      fi

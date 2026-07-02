@@ -1,0 +1,34 @@
+[config-partition]
+partition = 1
+
+[data-partition]
+partition = 6
+
+[boot-flow]
+type = "rpi-tryboot"
+
+[slots.boot-a]
+type = "block"
+partition = 2
+immutable = true
+
+[slots.boot-b]
+type = "block"
+partition = 3
+immutable = true
+
+[slots.system-a]
+type = "block"
+partition = 4
+immutable = true
+
+[slots.system-b]
+type = "block"
+partition = 5
+immutable = true
+
+[boot-groups.a]
+slots = { boot = "boot-a", system = "system-a" }
+
+[boot-groups.b]
+slots = { boot = "boot-b", system = "system-b" }

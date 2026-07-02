@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2024-2025 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $user := .user -}}
+{{- $passwd := .passwd -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Create default user {{ $user }}
+    chroot: true
+    command: useradd -m -U -s /bin/bash "{{ $user }}"
+
+  - action: run
+    description: Add user {{ $user }} to basic groups
+    chroot: true
+    command: usermod -aG
+      adm,audio,dialout,input,netdev,plugdev,render,sudo,users,video
+      "{{ $user }}"
+
+  - action: run
+    description: Set password of default user {{ $user }}
+    chroot: true
+    command: printf "%s:%s\n" "{{ $user }}" "{{ $passwd }}" | chpasswd
+
+  - action: run
+    description: Disable sudo without password for users in group sudo
+    chroot: false
+    command: |
+      printf "%%sudo ALL=(ALL) ALL\n" \
+        > "$ROOTDIR"/etc/sudoers.d/050_sudo-group-password-prompt
+
+  - action: run
+    description: Change permissions of sudo passwd file
+    chroot: true
+    command: chmod 440 /etc/sudoers.d/050_sudo-group-password-prompt
+
+  # the file is temporary and is removed by revpi-factory-reset after running
+  - action: run
+    description: Allow sudo revpi-factory-reset without password for default user {{ $user }}
+    chroot: false
+    command: |
+      printf "%s ALL=(root) NOPASSWD: /usr/sbin/revpi-factory-reset *\n" "{{ $user }}" \
+        > "$ROOTDIR"/etc/sudoers.d/051_revpi-factory-reset
+
+  - action: run
+    description: Change permissions of sudo revpi-factory-reset sudoers file
+    chroot: true
+    command: chmod 440 /etc/sudoers.d/051_revpi-factory-reset

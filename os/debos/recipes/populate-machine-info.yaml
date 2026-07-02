@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+{{/*
+/etc/machine-info is exposed by D-Bus on org.freedesktop.hostname1 (see
+org.freedesktop.hostname1(5)) and can be used by services and programs to
+display useful info about the system to the user.
+
+The hardware vendor is always "KUNBUS GmbH" and the chassis is always
+"embedded". The variable HARDWARE_MODEL should be set elsewhere, i.e. during
+system setup in revpi-factory-reset(8).
+*/}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Set CHASSIS as embedded in /etc/machine-info
+    chroot: false
+    command: printf "CHASSIS=\"embedded\"\n" >> "$ROOTDIR"/etc/machine-info
+
+  - action: run
+    description: Set HARDWARE_VENDOR to "KUNBUS GmbH"
+    chroot: false
+    command:
+      printf "HARDWARE_VENDOR=\"KUNBUS GmbH\"\n" >> "$ROOTDIR"/etc/machine-info

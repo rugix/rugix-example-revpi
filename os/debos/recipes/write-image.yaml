@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2024-2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $suite := .suite -}}
+{{- $output := .output -}}
+{{- $image := .image -}}
+{{- $compress_image := .compress_image -}}
+{{- $arch := .arch -}}
+{{- $size := .size -}}
+{{- $pack := .pack -}}
+{{- $gen_sbom := .gen_sbom -}}
+{{- $gen_vuln_report := .gen_vuln_report -}}
+{{- $rugix_bundle := .rugix_bundle -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: recipe
+    description: Prepare rootfs for output
+    recipe: prepare-image.yaml
+    variables:
+      arch: {{ $arch }}
+      output: {{ $output }}
+
+  {{ if eq $image "true" }}
+  - action: filesystem-deploy
+    description: Deploy file system onto image
+
+  - action: run
+    description: Create checksum for generated image
+    postprocess: true
+    command: |
+      md5sum "$ARTIFACTDIR"/"{{ $output }}".img \
+        | cut -d ' ' -f1 \
+        > "$ARTIFACTDIR"/"{{ $output }}".img.md5sum.txt
+
+  - action: run
+    description: Create block map file
+    postprocess: true
+    command: bmaptool create
+      -o "$ARTIFACTDIR/{{ $output }}".bmap
+      "$ARTIFACTDIR/{{ $output }}".img
+
+  {{- if eq $rugix_bundle "true" }}
+  - action: recipe
+    description: Create an update bundle
+    recipe: rugix-bundle.yaml
+    variables:
+      arch: {{ $arch }}
+      output: {{ $output }}
+  {{- end }}
+
+  {{ if eq $compress_image "zstd" }}
+  - action: run
+    description: Compress image with zstd
+    postprocess: true
+    command:
+      zstd -10 -zfT0 --no-progress --rm
+        -o "$ARTIFACTDIR"/"{{ $output }}".img.zst
+        -- "$ARTIFACTDIR"/"{{ $output }}".img
+  {{ else if eq $compress_image "gzip" }}
+  - action: run
+    description: Compress image with gzip
+    postprocess: true
+    command:
+      gzip -9 "$ARTIFACTDIR"/"{{ $output }}".img
+  {{ end }}
+  {{ end }}
+
+  {{ if eq $gen_sbom "true" }}
+  - action: run
+    description: Generate SBOM
+    command: syft -q
+      --source-name "{{ $output }}"
+      --source-version "{{ $output }}"
+      -o spdx-json="$ARTIFACTDIR"/sbom-"{{ $output }}".json
+      "$ROOTDIR"
+  {{ if eq $gen_vuln_report "true" }}
+  # a vulnerability report is always generated from an SBOM
+  - action: run
+    description: Generate vulnerability report
+    command: grype -q
+      -o json="$ARTIFACTDIR"/vuln-"{{ $output }}".json
+      "$ARTIFACTDIR"/sbom-"{{ $output }}".json
+  {{ end }}
+  {{ end }}
+
+  {{ if eq $pack "true" }}
+  - action: pack
+    description: Pack rootfs into tarball
+    file: {{ $output }}.tar.gz
+  {{ end }}
+
+  # TODO: shrink image size

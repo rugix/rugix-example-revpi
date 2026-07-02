@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2024 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Create temporary directory for debs
+    chroot: false
+    command: mkdir -p "$ROOTDIR"/mnt/debs-to-install
+
+  - action: overlay
+    description: Copy debs to image
+    source: /../debs-to-install
+    destination: /mnt/debs-to-install
+
+  - action: run
+    description: Install local debs into image
+    chroot: true
+    command: |
+      find /mnt/debs-to-install -iname "*.deb" \
+        | xargs -I{} printf "./%s\n" "{}" \
+        | tr '\n' ' ' \
+        | DEBIAN_FRONTEND=noninteractive xargs -r \
+          apt-get install -y --allow-downgrades
+
+  - action: run
+    description: Remove remaining deb files
+    chroot: false
+    command: rm -rf "$ROOTDIR"/mnt/debs-to-install
+
+  - action: run
+    description: Remove all replaced packages
+    chroot: true
+    command: DEBIAN_FRONTEND=noninteractive apt-get autoremove --purge -yq

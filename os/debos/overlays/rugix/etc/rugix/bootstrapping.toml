@@ -1,0 +1,10 @@
+[layout]
+type = "gpt"
+partitions = [
+    { name = "config", size = "256MiB", type = "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
+    { name = "boot-a", size = "256MiB", type = "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
+    { name = "boot-b", size = "256MiB", type = "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
+    { name = "system-a", size = "SYSTEM_SIZE", type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4" },
+    { name = "system-b", size = "SYSTEM_SIZE", type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4" },
+    { name = "data", filesystem = { type = "ext4" } },
+]

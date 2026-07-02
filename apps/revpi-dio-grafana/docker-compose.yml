@@ -1,0 +1,78 @@
+services:
+  influxdb:
+    image: docker.io/library/influxdb:2.7
+    restart: unless-stopped
+    ports:
+      - "${REVPI_INFLUX_PORT:-8086}:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: "${INFLUX_USERNAME:-revpi}"
+      DOCKER_INFLUXDB_INIT_PASSWORD: "${INFLUX_PASSWORD:-revpi-influx-password}"
+      DOCKER_INFLUXDB_INIT_ORG: "${INFLUX_ORG:-revpi}"
+      DOCKER_INFLUXDB_INIT_BUCKET: "${INFLUX_BUCKET:-revpi_dio}"
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "${INFLUX_TOKEN:-revpi-dio-token}"
+    volumes:
+      - ${RUGIX_APP_DATA_DIR:-./.runtime/data}/influxdb:/var/lib/influxdb2
+      - ${RUGIX_APP_DATA_DIR:-./.runtime/data}/influxdb-config:/etc/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping", "--host", "http://localhost:8086"]
+      interval: 5s
+      timeout: 4s
+      retries: 24
+
+  dio-controller:
+    image: localhost/rugix-example-revpi/revpi-dio-controller:0.1.0
+    build: ./services/dio-controller
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    devices:
+      - /dev/piControl0:/dev/piControl0
+    ports:
+      - "8090:8090"
+    environment:
+      INFLUX_BUCKET: "${INFLUX_BUCKET:-revpi_dio}"
+      INFLUX_ORG: "${INFLUX_ORG:-revpi}"
+      INFLUX_TOKEN: "${INFLUX_TOKEN:-revpi-dio-token}"
+      INFLUX_URL: http://influxdb:8086
+      POLL_INTERVAL_SECONDS: "${POLL_INTERVAL_SECONDS:-0.5}"
+    volumes:
+      - type: bind
+        source: /etc/revpi/config.rsc
+        target: /etc/revpi/config.rsc
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 5s
+      timeout: 4s
+      retries: 24
+
+  grafana:
+    image: docker.io/grafana/grafana-oss:11.5.2
+    user: "0:0"
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    ports:
+      - "${REVPI_GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-revpi}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      INFLUXDB_BUCKET: "${INFLUX_BUCKET:-revpi_dio}"
+      INFLUXDB_ORG: "${INFLUX_ORG:-revpi}"
+      INFLUXDB_TOKEN: "${INFLUX_TOKEN:-revpi-dio-token}"
+      INFLUXDB_URL: http://influxdb:8086
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ${RUGIX_APP_DATA_DIR:-./.runtime/data}/grafana:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18

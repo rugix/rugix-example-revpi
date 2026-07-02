@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 KUNBUS GmbH
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $image := .image -}}
+{{- $output := .output -}}
+{{- $size := .size -}}
+
+architecture: {{ $arch }}
+
+actions:
+  {{ if eq $image "true" }}
+  - action: recipe
+    description: Partition a Rugix image
+    recipe: ../recipes/partition-rugix.yaml
+    variables:
+      arch: {{ $arch }}
+      output: {{ $output }}
+      size: {{ $size }}
+  {{ end }}
+
+  - action: recipe
+    description: Prepare Rugix installation
+    recipe: ../recipes/rugix.yaml
+    variables:
+      arch: {{ $arch }}

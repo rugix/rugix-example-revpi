@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2024-2025 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $output := .output -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Collect installed packages
+    chroot: true
+    command: |
+      echo "package,version,source,source_version" > /packages.csv
+      dpkg-query -W \
+        -f='${binary:Package},${Version},${source:Package},${source:Version}\n'\
+        >> /packages.csv
+
+  - action: run
+    description: Move package list from image to host
+    chroot: false
+    command: |
+      mv "$ROOTDIR"/packages.csv \
+        "$ARTIFACTDIR"/packages_"{{ $output }}".csv

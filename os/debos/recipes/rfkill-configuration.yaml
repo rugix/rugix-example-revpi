@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2024-2025 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Create rfkill configuration directory in systemd
+    chroot: false
+    command: mkdir -p "$ROOTDIR"/var/lib/systemd/rfkill
+
+  - action: run
+    description: Disable WLAN on CM4 based devices by default
+    chroot: false
+    command:
+      echo 1 > "$ROOTDIR"/var/lib/systemd/rfkill/platform-fe300000.mmcnr:wlan
+
+  - action: run
+    description: Disable WLAN on Flat / Flat S devices by default
+    chroot: false
+    command:
+      echo 1 > "$ROOTDIR"/var/lib/systemd/rfkill/platform-fe300000.mmc:wlan
+
+  - action: run
+    description: Disable Bluetooth on Flat S by default
+    chroot: false
+    command:
+      echo 1 > "$ROOTDIR"/var/lib/systemd/rfkill/platform-soc:bluetooth
+
+  - action: run
+    description: Disable WLAN on CM5 based devices by default
+    chroot: false
+    command:
+      echo 1 > "$ROOTDIR"/var/lib/systemd/rfkill/platform-1001100000.mmc:wlan

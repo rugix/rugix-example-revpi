@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2024-2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $suite := .suite -}}
+{{- $arch := .arch -}}
+{{- $user := .user -}}
+{{- $passwd := .passwd -}}
+{{- $hostname := .hostname -}}
+{{- $ospack := or .ospack "" -}}
+
+architecture: {{ $arch }}
+
+actions:
+  {{- if eq $ospack "" }}
+  - action: recipe
+    description: Recipe for basic image
+    recipe: basic.yaml
+    variables:
+      suite: {{ $suite }}
+      arch: {{ $arch }}
+      user: {{ $user }}
+      passwd: {{ $passwd }}
+      hostname: {{ $hostname }}
+  {{- else }}
+  - action: unpack
+    description: Unpack basic ospack {{ $ospack }}
+    compression: gz
+    file: {{ $ospack }}
+  {{- end }}
+
+  - action: apt
+    description: Install Revolution Pi packages for lite image
+    recommends: true
+    packages:
+      - piserial
+      - can-utils
+      - python3-can
+      - libsocketcan-dev
+      - lsof
+      - python3-revpimodio2
+      - revpipyload
+      - revpi-bluetooth
+      - python3-libgpiod
+      - python3-yaml
+      - python3-schema
+      - python3-revpi-device-info
+      - revpi-sos-report
+      - rsyslog
+      - rfkill
+      # pictory extensions
+      - opcua-revpi-server
+      - mqtt-revpi-client
+      - flashrom
+      - dphys-swapfile
+      # show NEWS files during upgrades
+      - apt-listchanges
+      # enable realtek based usb wifi dongles
+      - firmware-realtek
+      - revpi-security
+
+  - action: run
+    description: Change configuration value tmp-dir of sos.conf to /var/tmp
+    chroot: false
+    command:
+      sed -i -e
+        's,\(tmp-dir\) =.*,\1 = /var/tmp,g'
+        "${ROOTDIR}"/etc/sos/sos.conf
+
+  - action: run
+    description: Mask services setting cpu-governor to ondemand
+    chroot: true
+    command: systemctl mask raspi-config.service cpufrequtils.service
+
+  - action: run
+    description: Disable using a swapfile by default
+    chroot: true
+    command: systemctl disable dphys-swapfile
+
+  - action: run
+    description: Set absolute value for swapfile to 512 MB
+    chroot: false
+    command:
+      sed -i -e
+        's/^#\(CONF_SWAPSIZE\)=.*/\1=512/g'
+        "$ROOTDIR"/etc/dphys-swapfile
+
+  - action: run
+    description: Don't boot into graphical interface by default
+    chroot: true
+    command: systemctl set-default multi-user.target

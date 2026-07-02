@@ -1,0 +1,2 @@
+influxdb-client>=1.49,<2
+revpimodio2>=2.8,<3

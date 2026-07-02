@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: overlay
+    description: Install Rugix Apps runtime files
+    source: ../overlays/rugix-apps
+
+  - action: run
+    description: Enable Rugix Apps runtime units
+    chroot: true
+    command: >
+      systemctl enable
+      rugix-docker-runtime-components.service
+      rugix-rpi-components.service
+      rugix-revpi-components.service
+      rugix-apps-restore-units.service
+      rugix-apps-recover.service

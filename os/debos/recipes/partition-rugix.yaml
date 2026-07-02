@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $output := .output -}}
+{{- $size := .size -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: image-partition
+    description: Partition image
+    imagename: {{ $output }}.img
+    imagesize: {{ $size }}
+    # Rugix images are only possible to build with debos if GPT is used
+    partitiontype: gpt
+    partitions:
+      # rugix enforces 34 blocks of free space at the beginning of the disk
+      - name: config
+        fs: fat32
+        start: 1MiB
+        end: 257MiB
+      - name: boot-a
+        fs: fat32
+        start: 257MiB
+        end: 513MiB
+      - name: boot-b
+        fs: fat32
+        start: 513MiB
+        end: 769MiB
+      - name: system-a
+        fs: ext4
+        start: 770MiB
+        end: 100%
+    mountpoints:
+      - mountpoint: /
+        partition: system-a
+      - mountpoint: /boot/firmware
+        partition: boot-a
+        options: [ x-systemd.automount ]
+      - mountpoint: /run/rugix/mounts/config
+        partition: config
+        buildtime: true

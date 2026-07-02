@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2024 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: overlay
+    description: Copy files for boot
+    source: ../overlays/rpi-fw
+
+  # This relies on `/boot/firmware/overlays` existing, which is only created
+  # after the kernel is installed.
+  - action: run
+    description: Add revpi devicetree blob for HAT EEPROM to /boot/firmware
+    chroot: false
+    command:
+      cp "$ROOTDIR"/boot/firmware/overlays/revpi-dt-blob.dtbo
+      "$ROOTDIR"/boot/firmware/dt-blob.bin

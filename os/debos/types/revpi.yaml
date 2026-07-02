@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $image := .image -}}
+{{- $output := .output -}}
+{{- $image_partition_type := .image_partition_type -}}
+{{- $size := .size -}}
+
+architecture: {{ $arch }}
+
+actions:
+  {{- if eq $image "true" }}
+  - action: recipe
+    description: Partition a RevPi image
+    recipe: ../recipes/partition-revpi.yaml
+    variables:
+      arch: {{ $arch }}
+      output: {{ $output }}
+      image_partition_type: {{ $image_partition_type }}
+      size: {{ $size }}
+  {{- else }}
+  # XXX: empty recipes aren't allowed. remove this dummy rule once the recipe
+  # always has an action
+  - action: run
+    description: 'Workaround: Empty dummy action'
+    chroot: false
+    command: 'true'
+  {{- end }}

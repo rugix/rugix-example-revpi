@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $output := .output -}}
+{{- $image_partition_type := .image_partition_type -}}
+{{- $compress_image := .compress_image -}}
+{{- $size := .size -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: image-partition
+    description: Partition image
+    imagename: {{ $output }}.img
+    imagesize: {{ $size }}
+    partitiontype: {{ $image_partition_type }}
+    partitions:
+      - name: rpi-fw
+        fs: fat32
+        start: 1MiB
+        end: 257MiB
+      - name: rootfs
+        fs: ext4
+        start: 257MiB
+        end: 100%
+    mountpoints:
+      - mountpoint: /
+        partition: rootfs
+      - mountpoint: /boot/firmware
+        partition: rpi-fw
+        options: [ x-systemd.automount ]

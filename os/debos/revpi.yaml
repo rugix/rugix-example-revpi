@@ -1,0 +1,194 @@
+# SPDX-FileCopyrightText: 2024-2026 KUNBUS GmbH
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := or .arch "arm64" -}}
+{{- $suite := or .suite "trixie" -}}
+{{- $flavour := or .flavour "default" -}}
+{{- $type := or .type "revpi" -}}
+{{- $image_size_from_user := or .image_size "" -}}
+{{- $image_size := $image_size_from_user -}}
+{{- $user := or .user "pi" -}}
+{{- $passwd := or .passwd "revolutionpi" -}}
+{{- $hostname := or .hostname "RevPi" -}}
+
+{{- if not $image_size -}}
+  {{- if eq $flavour "minimal" -}}
+    {{/* 1288490188 == 1.2GiB */}}
+    {{- $image_size = "1288490188" -}}
+  {{- else if eq $flavour "basic" -}}
+    {{/*
+    1610612736 == 1.5GiB
+    This is set manually due to a bug in debos where base 1024 suffixes and floating
+    point numbers are incorrectly computed as base 1000 suffixes.
+    */}}
+    {{- $image_size = "1610612736" -}}
+  {{- else if eq $flavour "lite" -}}
+    {{/* 1717986918 == 1.6GiB */}}
+    {{- $image_size = "1717986918" -}}
+  {{- else if eq $flavour "default" -}}
+    {{- $image_size = "4GiB" -}}
+  {{- else -}}
+    {{- $image_size = "4GiB" -}}
+  {{- end -}}
+{{- end -}}
+{{- if and (eq $type "rugix") (not $image_size_from_user) -}}
+  {{/* Rugix images need room for a config partition and redundant boot partitions. */}}
+  {{- $image_size = "4GiB" -}}
+{{- end -}}
+
+{{- $output := or .output (printf "%s-%s-%s-%s" $type $suite $arch $flavour) -}}
+{{- $local_debs := or .local_debs "false" -}}
+{{- $image := or .image "true" -}}
+{{- $image_partition_type := or .image_partition_type "msdos" -}}
+{{- $compress_image := or .compress_image "zstd" -}}
+{{- if eq $compress_image "true" -}}
+  {{- $compress_image = "zstd" -}}
+{{- end -}}
+
+{{- $ospack := or .ospack "" -}}
+{{- $pack := or .pack "false" -}}
+{{- $sources := or .sources "false" -}}
+{{- $package_list := or .package_list "true" -}}
+{{- $gen_sbom := or .gen_sbom "false" -}}
+{{- $gen_vuln_report := or .gen_vuln_report "false" -}}
+
+{{- $rugix_bundle := or .rugix_bundle "true" -}}
+{{- $docker := or .docker "false" -}}
+{{/* Keep docker:true as an alias for the existing Docker-backed Rugix Apps demo. */}}
+{{- $rugix_apps := or .rugix_apps $docker "false" -}}
+{{- $nexigon := or .nexigon "false" -}}
+{{- $nexigon_tag := or .nexigon_tag "stable" -}}
+{{- $nexigon_interval := or .nexigon_interval "4h" -}}
+{{- $nexigon_watchdog_timeout := or .nexigon_watchdog_timeout "300" -}}
+{{- $nexigon_agent_version := or .nexigon_agent_version "v0.5" -}}
+{{- $nexigon_provisioning := or .nexigon_provisioning "false" -}}
+{{- $rugix_admin := or .rugix_admin "false" -}}
+{{- $rugix_admin_address := or .rugix_admin_address "0.0.0.0:8088" -}}
+{{- $version := or .version $output -}}
+{{- if eq $rugix_apps "true" -}}
+  {{- $docker = "true" -}}
+{{- end -}}
+{{/* Rugix bundles only make sense if the image is a Rugix image */}}
+{{- if ne $type "rugix" -}}
+  {{- $rugix_bundle = "false" -}}
+  {{- $nexigon = "false" -}}
+  {{- $nexigon_provisioning = "false" -}}
+  {{- $rugix_admin = "false" -}}
+  {{- $rugix_apps = "false" -}}
+{{- end -}}
+
+{{/* Genearting a vulnerability report always generates an SBOM as well */}}
+{{- if eq $gen_vuln_report "true" -}}
+  {{- $gen_sbom = "true" -}}
+{{- end -}}
+
+{{/* Generating an SBOM will also generate a package list */}}
+{{- if eq $gen_sbom "true" -}}
+  {{- $package_list = "true" -}}
+{{- end -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: recipe
+    description: Recipe for {{ $flavour }}
+    recipe: flavours/{{ $flavour }}.yaml
+    variables:
+      suite: {{ $suite }}
+      arch: {{ $arch }}
+      user: {{ $user }}
+      passwd: {{ $passwd }}
+      hostname: {{ $hostname }}
+      ospack: {{ $ospack }}
+
+  - action: recipe
+    description: Recipe for {{ $type }} type
+    recipe: types/{{ $type }}.yaml
+    variables:
+      arch: {{ $arch }}
+      image: {{ $image }}
+      output: {{ $output }}
+      image_partition_type: {{ $image_partition_type }}
+      size: {{ $image_size }}
+
+  {{- if eq $docker "true" }}
+  - action: recipe
+    description: Install Docker
+    recipe: recipes/docker.yaml
+    variables:
+      arch: {{ $arch }}
+  {{- end }}
+
+  {{- if eq $rugix_apps "true" }}
+  - action: recipe
+    description: Install Rugix Apps runtime
+    recipe: recipes/rugix-apps.yaml
+    variables:
+      arch: {{ $arch }}
+  {{- end }}
+
+  {{- if eq $rugix_admin "true" }}
+  - action: recipe
+    description: Install Rugix Admin
+    recipe: recipes/rugix-admin.yaml
+    variables:
+      arch: {{ $arch }}
+      address: "{{ $rugix_admin_address }}"
+  {{- end }}
+
+  {{- if eq $nexigon "true" }}
+  - action: recipe
+    description: Install Nexigon integration
+    recipe: recipes/nexigon.yaml
+    variables:
+      arch: {{ $arch }}
+      output: {{ $output }}
+      version: {{ $version }}
+      tag: {{ $nexigon_tag }}
+      interval: {{ $nexigon_interval }}
+      watchdog_timeout: {{ $nexigon_watchdog_timeout }}
+      agent_version: {{ $nexigon_agent_version }}
+      provisioning: {{ $nexigon_provisioning }}
+  {{- end }}
+
+  {{- if eq $local_debs "true" }}
+  - action: recipe
+    description: Recipe for installing local debs
+    recipe: recipes/install-local-debs.yaml
+    variables:
+      arch: {{ $arch }}
+  {{- end }}
+
+  {{- if eq $sources "true" }}
+  - action: recipe
+    description: Recipe for collecting sources for installed packages
+    recipe: recipes/collect-sources.yaml
+    variables:
+      arch: {{ $arch }}
+      output: {{ $output }}
+  {{- end }}
+
+  {{- if eq $package_list "true" }}
+  - action: recipe
+    description: Recipe for listing all installed packages
+    recipe: recipes/list-packages.yaml
+    variables:
+      arch: {{ $arch }}
+      output: {{ $output }}
+  {{- end }}
+
+  - action: recipe
+    description: Recipe for finishing up
+    recipe: recipes/write-image.yaml
+    variables:
+      output: {{ $output }}
+      arch: {{ $arch }}
+      size: {{ $image_size }}
+      image: {{ $image }}
+      compress_image: {{ $compress_image }}
+      pack: {{ $pack }}
+      gen_sbom: {{ $gen_sbom }}
+      gen_vuln_report: {{ $gen_vuln_report }}
+      rugix_bundle: {{ $rugix_bundle }}

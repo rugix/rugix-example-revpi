@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: 2024-2025 KUNBUS GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{/*
+The installation of essential packages is split into 3 stages. Each stage
+depends on the previous one to work, so combining these into 1 isn't possible.
+
+STAGE 1
+  Contains essential packages for a debian system.
+
+  This includes an init system, here systemd.
+
+STAGE 2
+  Installs essential packages for a system based on a Raspberry Pi.
+
+  Packages installed include raspi-firmware, which requires systemd to be
+  installed for /usr/bin/systemd-detect-virt, which skips checking for
+  /boot/firmware being a mount point in the postinst hook, which is not the case
+  during a build in debos.
+
+STAGE 3
+  Provide essential packages for a Revolution Pi system.
+
+  To run a Revolution Pi system, the custom linux kernel is required, which is
+  packaged in linux-image-revpi-v8. This requires revpi-firmware and its
+  postinst hook to be installed for the Device Tree Blobs (DTBs) of Revolution
+  Pi devices to be installed to /boot/firmware/overlays.
+*/}}
+
+{{- $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: apt
+    description: "[APT STAGE 1] Install essential linux packages"
+    recommends: true
+    packages:
+      # The init package is a meta package that, by default, installs
+      # systemd-sysv, which also has a dependency on systemd.
+      - init
+      - udev
+      - kmod
+
+  # The raspi-firmware package in stage 2 requires linux-base to be installed
+  # for the linux-version command to be available. Since raspi-firmware
+  # doesn't list linux-base as a dependency (yet) linux-base has to be
+  # installed manually before raspi-firmware to ensure its postinst maintainer
+  # script is run without errors.
+  #
+  # This stage will be removed when raspi-firmware lists linux-base as a
+  # dependency.
+  - action: apt
+    update: false
+    recommends: true
+    description: "[APT STAGE 1.1] Install linux-base for raspi-firmware"
+    packages:
+      - linux-base
+
+  - action: apt
+    update: false
+    recommends: true
+    description: "[APT STAGE 2] Install essential raspi packages"
+    packages:
+      # raspi-firmware brings in the bootloader and the postinst hook for the
+      # kernel so the kernel image and the DTBs are installed to
+      # /boot/firmware/overlays.
+      - raspi-firmware
+
+  - action: apt
+    update: false
+    recommends: true
+    description: "[APT STAGE 3] Install initramfs-tools for initramfs generation"
+    packages:
+      - initramfs-tools
+
+  - action: apt
+    update: false
+    recommends: true
+    description: "[APT STAGE 4] Install essential revpi packages"
+    packages:
+      # linux-image-revpi-v8 provides the DTBs to be installed to
+      # /boot/firmware/overlays by raspi-firmware.
+      - linux-image-revpi-v8
+      - revpi-base-files
+      - revpi-firmware
+      - revpi-tools
