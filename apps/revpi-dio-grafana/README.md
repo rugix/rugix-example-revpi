@@ -93,7 +93,7 @@ The script installs:
 - Rugix Apps restore and recovery systemd units.
 - Runtime component publisher services for Docker, Raspberry Pi, and RevPi
   hardware metadata.
-- Rugix Admin, enabled by default on port `8088`.
+- Rugix Admin, enabled by default on port `7492`.
 
 The script does not convert the stock OS into a Rugix A/B boot-managed system.
 It only adds the runtime needed to try Docker-backed Rugix Apps.
@@ -194,8 +194,8 @@ If you used the stock-OS setup script or a prebuilt image with Rugix Admin
 enabled, Rugix Admin is available at:
 
 ```text
-http://<revpi>:8088
+http://<revpi>:7492
 ```
 
 It provides a local web interface for inspecting the Rugix system state and
-installed apps. Keep port `8088` reachable only from trusted networks.
+installed apps. Keep port `7492` reachable only from trusted networks.

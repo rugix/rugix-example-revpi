@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 ---
 {{ $arch := .arch -}}
-{{- $address := or .address "0.0.0.0:8088" -}}
+{{- $address := or .address "0.0.0.0:7492" -}}
 
 architecture: {{ $arch }}
 

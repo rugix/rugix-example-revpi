@@ -56,7 +56,7 @@ This image includes:
 
 - Rugix A/B system updates.
 - Docker and the Rugix Apps runtime.
-- Rugix Admin on port `8088`.
+- Rugix Admin on port `7492`.
 - Nexigon Agent with local provisioning enabled.
 - Nexigon remote commands, terminal access, and Rugix OTA integration.
 
@@ -79,10 +79,10 @@ can read the device's HAT EEPROM. It does not rewrite the `pi` password.
 After boot, Rugix Admin is available at:
 
 ```text
-http://<revpi>:8088
+http://<revpi>:7492
 ```
 
-Keep port `8088` reachable only from trusted networks.
+Keep port `7492` reachable only from trusted networks.
 
 ## Try Nexigon
 
