@@ -5,9 +5,11 @@
 
 set -euo pipefail
 
-RUGIX_VERSION="${RUGIX_VERSION:-v1.3.0-dev.2}"
+RUGIX_VERSION="${RUGIX_VERSION:-v1.3.0-dev.5}"
 RUGIX_TRIPLE="${RUGIX_TRIPLE:-}"
 RUGIX_BINARY_URL="${RUGIX_BINARY_URL:-}"
+RUGIX_ADMIN_VERSION="${RUGIX_ADMIN_VERSION:-v0.5.0-dev.3}"
+RUGIX_ADMIN_BINARY_URL="${RUGIX_ADMIN_BINARY_URL:-}"
 RUGIX_ADMIN_ADDRESS="${RUGIX_ADMIN_ADDRESS:-0.0.0.0:7492}"
 RUGIX_INSTALL_DOCKER="${RUGIX_INSTALL_DOCKER:-true}"
 RUGIX_INSTALL_ADMIN="${RUGIX_INSTALL_ADMIN:-true}"
@@ -28,7 +30,7 @@ This installs:
   - rugix-ctrl, rugix-admin, and rugix-bundler
   - Rugix Apps restore and recovery systemd units
   - Docker, Raspberry Pi, and RevPi component publisher services
-  - the Rugix Admin systemd unit, enabled by default
+  - Rugix Admin and its privileged daemon systemd units, enabled by default
 
 It does not convert the OS into a Rugix A/B boot-managed image.
 
@@ -37,17 +39,22 @@ Options:
                                default: ${RUGIX_ADMIN_ADDRESS}
   --rugix-version VERSION      Rugix release to install
                                default: ${RUGIX_VERSION}
+  --rugix-admin-version VERSION
+                               Rugix Admin release to install
+                               default: ${RUGIX_ADMIN_VERSION}
   --rugix-triple TRIPLE        Rugix binary archive target triple
                                default: detected from uname -m
   --rugix-binary-url URL       Full Rugix binary archive URL
+  --rugix-admin-binary-url URL Full Rugix Admin binary archive URL
   --no-admin                   Do not install or enable Rugix Admin
   --no-docker                  Do not install Docker
   --no-start                   Enable services but do not start them now
   -h, --help                   Show this help
 
 Environment variables with matching names can also be used:
-  RUGIX_VERSION, RUGIX_TRIPLE, RUGIX_BINARY_URL, RUGIX_ADMIN_ADDRESS,
-  RUGIX_INSTALL_DOCKER, RUGIX_INSTALL_ADMIN, RUGIX_START_SERVICES
+  RUGIX_VERSION, RUGIX_TRIPLE, RUGIX_BINARY_URL, RUGIX_ADMIN_VERSION,
+  RUGIX_ADMIN_BINARY_URL, RUGIX_ADMIN_ADDRESS, RUGIX_INSTALL_DOCKER,
+  RUGIX_INSTALL_ADMIN, RUGIX_START_SERVICES
 EOF
 }
 
@@ -77,6 +84,11 @@ parse_args() {
                 RUGIX_VERSION="$2"
                 shift 2
                 ;;
+            --rugix-admin-version)
+                [ "$#" -ge 2 ] || die "--rugix-admin-version requires a value"
+                RUGIX_ADMIN_VERSION="$2"
+                shift 2
+                ;;
             --rugix-triple)
                 [ "$#" -ge 2 ] || die "--rugix-triple requires a value"
                 RUGIX_TRIPLE="$2"
@@ -85,6 +97,11 @@ parse_args() {
             --rugix-binary-url)
                 [ "$#" -ge 2 ] || die "--rugix-binary-url requires a value"
                 RUGIX_BINARY_URL="$2"
+                shift 2
+                ;;
+            --rugix-admin-binary-url)
+                [ "$#" -ge 2 ] || die "--rugix-admin-binary-url requires a value"
+                RUGIX_ADMIN_BINARY_URL="$2"
                 shift 2
                 ;;
             --no-admin)
@@ -282,10 +299,28 @@ install_rugix_binaries() {
     tar -xf "${tmpdir}/rugix-binaries.tar" -C "${tmpdir}"
 
     local binary
-    for binary in rugix-ctrl rugix-admin rugix-bundler; do
+    for binary in rugix-ctrl rugix-bundler; do
         [ -f "${tmpdir}/${binary}" ] || die "Rugix archive is missing ${binary}"
         "${SUDO[@]}" install -m 0755 "${tmpdir}/${binary}" "/usr/bin/${binary}"
     done
+
+    rm -rf "${tmpdir}"
+
+    if ! bool_is_true "${RUGIX_INSTALL_ADMIN}"; then
+        return
+    fi
+    if [ -z "${RUGIX_ADMIN_BINARY_URL}" ]; then
+        RUGIX_ADMIN_BINARY_URL="https://github.com/rugix/rugix-admin/releases/download/${RUGIX_ADMIN_VERSION}/binaries-${RUGIX_TRIPLE}.tar"
+    fi
+
+    tmpdir="$(mktemp -d)"
+
+    log "Downloading Rugix Admin binaries from ${RUGIX_ADMIN_BINARY_URL}"
+    curl -fsSL "${RUGIX_ADMIN_BINARY_URL}" -o "${tmpdir}/rugix-admin-binaries.tar"
+    tar -xf "${tmpdir}/rugix-admin-binaries.tar" -C "${tmpdir}"
+
+    [ -f "${tmpdir}/rugix-admin" ] || die "Rugix Admin archive is missing rugix-admin"
+    "${SUDO[@]}" install -m 0755 "${tmpdir}/rugix-admin" /usr/bin/rugix-admin
 
     rm -rf "${tmpdir}"
 }
@@ -730,15 +765,50 @@ install_rugix_admin_service() {
 
     validate_admin_address
 
-    local tmp
-    tmp="$(mktemp)"
+    if ! getent group rugix-daemon >/dev/null; then
+        "${SUDO[@]}" groupadd --system rugix-daemon
+    fi
 
-    cat >"${tmp}" <<EOF
+    if [ ! -e /etc/rugix/daemon.toml ]; then
+        install_from_stdin 0644 /etc/rugix/daemon.toml <<'__RUGIX_DAEMON_CONFIG__'
+[features]
+factory-reset = true
+system-commit = true
+system-reboot = true
+app-lifecycle = true
+__RUGIX_DAEMON_CONFIG__
+    fi
+
+    install_from_stdin 0644 /usr/lib/systemd/system/rugix-ctrl-daemon.service <<'__RUGIX_CTRL_DAEMON_SERVICE__'
+[Unit]
+Description=Privileged Rugix Ctrl Operation Daemon
+After=local-fs.target
+ConditionFileIsExecutable=/usr/bin/rugix-ctrl
+
+[Service]
+Type=simple
+User=root
+Group=rugix-daemon
+UMask=0117
+ExecStart=/usr/bin/rugix-ctrl daemon
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+__RUGIX_CTRL_DAEMON_SERVICE__
+
+    install_from_stdin 0644 /usr/lib/systemd/system/rugix-admin.service <<EOF
 [Unit]
 Description=Rugix Admin
 ConditionFileIsExecutable=/usr/bin/rugix-admin
+After=rugix-ctrl-daemon.service
+Requires=rugix-ctrl-daemon.service
 
 [Service]
+DynamicUser=yes
+User=rugix-admin
+Group=rugix-daemon
+NoNewPrivileges=true
 ExecStart=/usr/bin/rugix-admin --address ${RUGIX_ADMIN_ADDRESS}
 Restart=on-failure
 
@@ -746,10 +816,7 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOF
 
-    log "Installing Rugix Admin service"
-    backup_if_different "${tmp}" /usr/lib/systemd/system/rugix-admin.service
-    "${SUDO[@]}" install -D -m 0644 "${tmp}" /usr/lib/systemd/system/rugix-admin.service
-    rm -f "${tmp}"
+    log "Installed Rugix Admin and privileged Rugix Ctrl daemon services"
 }
 
 configure_rugix_admin_firewall() {
@@ -790,7 +857,9 @@ enable_services() {
         rugix-apps-recover.service
 
     if bool_is_true "${RUGIX_INSTALL_ADMIN}"; then
-        "${SUDO[@]}" systemctl enable rugix-admin.service
+        "${SUDO[@]}" systemctl enable \
+            rugix-ctrl-daemon.service \
+            rugix-admin.service
     fi
 }
 
@@ -811,6 +880,7 @@ start_services() {
     fi
 
     if bool_is_true "${RUGIX_INSTALL_ADMIN}"; then
+        "${SUDO[@]}" systemctl restart rugix-ctrl-daemon.service
         "${SUDO[@]}" systemctl restart rugix-admin.service
     fi
 }

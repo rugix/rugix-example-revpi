@@ -1,7 +1,7 @@
 ARG DEBOS_BASE_IMAGE=docker.io/godebos/debos:v1.1.6
 FROM ${DEBOS_BASE_IMAGE}
 
-ARG RUGIX_VERSION=v1.3.0-dev.2
+ARG RUGIX_VERSION=v1.3.0-dev.5
 
 ENV DEBIAN_FRONTEND=noninteractive
 

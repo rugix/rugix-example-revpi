@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+{{- $dangerously_insecure := or .dangerously_insecure "false" -}}
+{{- $factory_reset := or .factory_reset "false" -}}
+{{- $system_commit := or .system_commit "false" -}}
+{{- $system_reboot := or .system_reboot "false" -}}
+{{- $app_lifecycle := or .app_lifecycle "false" -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: run
+    description: Install privileged Rugix Ctrl daemon
+    chroot: false
+    command: |
+      dangerously_insecure="{{ $dangerously_insecure }}"
+      factory_reset="{{ $factory_reset }}"
+      system_commit="{{ $system_commit }}"
+      system_reboot="{{ $system_reboot }}"
+      app_lifecycle="{{ $app_lifecycle }}"
+
+      validate_boolean() {
+          case "$2" in
+              true | false)
+                  ;;
+              *)
+                  echo "[ERROR] invalid value for $1: $2" >&2
+                  exit 1
+                  ;;
+          esac
+      }
+
+      validate_boolean dangerously_insecure "$dangerously_insecure"
+      validate_boolean factory_reset "$factory_reset"
+      validate_boolean system_commit "$system_commit"
+      validate_boolean system_reboot "$system_reboot"
+      validate_boolean app_lifecycle "$app_lifecycle"
+
+      if [ ! -x "$ROOTDIR"/usr/bin/rugix-ctrl ]; then
+          echo "[ERROR] rugix-ctrl binary is missing" >&2
+          exit 1
+      fi
+
+      install -d -m 0755 "$ROOTDIR"/etc/rugix
+      cat >"$ROOTDIR"/etc/rugix/daemon.toml <<EOF
+      dangerously-insecure = ${dangerously_insecure}
+
+      [features]
+      factory-reset = ${factory_reset}
+      system-commit = ${system_commit}
+      system-reboot = ${system_reboot}
+      app-lifecycle = ${app_lifecycle}
+      EOF
+      chmod 0644 "$ROOTDIR"/etc/rugix/daemon.toml
+
+      install -d "$ROOTDIR"/usr/lib/systemd/system
+      cat >"$ROOTDIR"/usr/lib/systemd/system/rugix-ctrl-daemon.service <<'EOF'
+      [Unit]
+      Description=Privileged Rugix Ctrl Operation Daemon
+      After=local-fs.target
+      ConditionFileIsExecutable=/usr/bin/rugix-ctrl
+
+      [Service]
+      Type=simple
+      User=root
+      Group=rugix-daemon
+      UMask=0117
+      ExecStart=/usr/bin/rugix-ctrl daemon
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+      EOF
+
+  - action: run
+    description: Enable privileged Rugix Ctrl daemon
+    chroot: true
+    command: |
+      if ! rugix-ctrl daemon --help >/dev/null 2>&1; then
+          echo "[ERROR] installed Rugix Ctrl does not provide daemon mode" >&2
+          exit 1
+      fi
+      getent group rugix-daemon >/dev/null || groupadd --system rugix-daemon
+      systemctl enable rugix-ctrl-daemon.service

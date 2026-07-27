@@ -48,7 +48,7 @@ sudo apt-get install -y skopeo podman
 
 Download `rugix-bundler` from the Rugix release used by this repository:
 
-<https://github.com/rugix/rugix/releases/tag/v1.3.0-dev.2>
+<https://github.com/rugix/rugix/releases/tag/v1.3.0-dev.5>
 
 Put the binary on your `PATH` as `rugix-bundler`, or set `RUGIX_BUNDLER` to its
 full path when running the build script.

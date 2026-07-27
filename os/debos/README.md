@@ -190,7 +190,17 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
 - `type`: Image type. Use `rugix` for Rugix-managed images. Default: `rugix`.
 - `docker`: Install Docker. Default: `false`.
 - `rugix_apps`: Install the Rugix Apps runtime. Default: follows `docker`.
-- `rugix_admin`: Install and enable Rugix Admin. Default: `false`.
+- `rugix_ctrl_daemon`: Install and enable the privileged Rugix Ctrl daemon.
+  Default: follows `rugix_admin`.
+- `rugix_admin`: Install and enable Rugix Admin and the Rugix Ctrl daemon.
+  Default: `false`.
+- `rugix_admin_version`: Rugix Admin release tag. Default: `v0.5.0-dev.3`.
+- `rugix_admin_address`: Rugix Admin listen address. Default: `0.0.0.0:7492`.
+- `rugix_daemon_factory_reset`, `rugix_daemon_system_commit`,
+  `rugix_daemon_system_reboot`, and `rugix_daemon_app_lifecycle`: Privileged
+  daemon operations. Each defaults to the value of `rugix_admin`.
+- `rugix_daemon_dangerously_insecure`: Permit bundle installation without
+  signature verification. Default: `false`.
 - `nexigon`: Install and configure Nexigon integration. Default: `false`.
 - `nexigon_provisioning`: Enable local Nexigon pairing on port `6947`. Default:
   `false`.

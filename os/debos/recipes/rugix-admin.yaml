@@ -3,11 +3,23 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 ---
 {{ $arch := .arch -}}
+{{- $version := or .version "v0.5.0-dev.3" -}}
 {{- $address := or .address "0.0.0.0:7492" -}}
 
 architecture: {{ $arch }}
 
 actions:
+  - action: download
+    description: Download Rugix Admin binaries
+    url: https://github.com/rugix/rugix-admin/releases/download/{{ $version }}/binaries-aarch64-unknown-linux-musl.tar
+    name: rugix-admin-binaries
+    unpack: true
+
+  - action: overlay
+    description: Install Rugix Admin binaries into image
+    origin: rugix-admin-binaries
+    destination: /usr/bin/
+
   - action: run
     description: Install Rugix Admin service
     chroot: false
@@ -25,7 +37,7 @@ actions:
       fi
 
       if [ ! -x "$ROOTDIR"/usr/bin/rugix-admin ]; then
-          echo "[ERROR] rugix-admin binary is missing; build a Rugix image first" >&2
+          echo "[ERROR] rugix-admin binary is missing" >&2
           exit 1
       fi
 
@@ -34,8 +46,14 @@ actions:
       [Unit]
       Description=Rugix Admin
       ConditionFileIsExecutable=/usr/bin/rugix-admin
+      After=rugix-ctrl-daemon.service
+      Requires=rugix-ctrl-daemon.service
 
       [Service]
+      DynamicUser=yes
+      User=rugix-admin
+      Group=rugix-daemon
+      NoNewPrivileges=true
       ExecStart=/usr/bin/rugix-admin --address ${address}
       Restart=on-failure
 

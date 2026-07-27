@@ -64,17 +64,28 @@
 {{- $nexigon_watchdog_timeout := or .nexigon_watchdog_timeout "300" -}}
 {{- $nexigon_agent_version := or .nexigon_agent_version "git-e6ab0e7" -}}
 {{- $nexigon_provisioning := or .nexigon_provisioning "false" -}}
+{{- $rugix_ctrl_daemon := or .rugix_ctrl_daemon "false" -}}
+{{- $rugix_daemon_dangerously_insecure := or .rugix_daemon_dangerously_insecure "false" -}}
+{{- $rugix_daemon_factory_reset := or .rugix_daemon_factory_reset .rugix_admin "false" -}}
+{{- $rugix_daemon_system_commit := or .rugix_daemon_system_commit .rugix_admin "false" -}}
+{{- $rugix_daemon_system_reboot := or .rugix_daemon_system_reboot .rugix_admin "false" -}}
+{{- $rugix_daemon_app_lifecycle := or .rugix_daemon_app_lifecycle .rugix_admin "false" -}}
 {{- $rugix_admin := or .rugix_admin "false" -}}
+{{- $rugix_admin_version := or .rugix_admin_version "v0.5.0-dev.3" -}}
 {{- $rugix_admin_address := or .rugix_admin_address "0.0.0.0:7492" -}}
 {{- $version := or .version $output -}}
 {{- if eq $rugix_apps "true" -}}
   {{- $docker = "true" -}}
+{{- end -}}
+{{- if eq $rugix_admin "true" -}}
+  {{- $rugix_ctrl_daemon = "true" -}}
 {{- end -}}
 {{/* Rugix bundles and integrations only make sense if the image is a Rugix image */}}
 {{- if ne $type "rugix" -}}
   {{- $rugix_bundle = "false" -}}
   {{- $nexigon = "false" -}}
   {{- $nexigon_provisioning = "false" -}}
+  {{- $rugix_ctrl_daemon = "false" -}}
   {{- $rugix_admin = "false" -}}
   {{- $rugix_apps = "false" -}}
 {{- else -}}
@@ -131,12 +142,26 @@ actions:
       arch: {{ $arch }}
   {{- end }}
 
+  {{- if eq $rugix_ctrl_daemon "true" }}
+  - action: recipe
+    description: Install privileged Rugix Ctrl daemon
+    recipe: recipes/rugix-ctrl-daemon.yaml
+    variables:
+      arch: {{ $arch }}
+      dangerously_insecure: "{{ $rugix_daemon_dangerously_insecure }}"
+      factory_reset: "{{ $rugix_daemon_factory_reset }}"
+      system_commit: "{{ $rugix_daemon_system_commit }}"
+      system_reboot: "{{ $rugix_daemon_system_reboot }}"
+      app_lifecycle: "{{ $rugix_daemon_app_lifecycle }}"
+  {{- end }}
+
   {{- if eq $rugix_admin "true" }}
   - action: recipe
     description: Install Rugix Admin
     recipe: recipes/rugix-admin.yaml
     variables:
       arch: {{ $arch }}
+      version: {{ $rugix_admin_version }}
       address: "{{ $rugix_admin_address }}"
   {{- end }}
 
