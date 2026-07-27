@@ -102,12 +102,12 @@ click **Add Device**. The provisioning flow shows a pairing key and asks you to
 send it to the device. From a machine that can reach the RevPi, run:
 
 ```sh
-curl --data "XXXXXX-XXXX" http://DEVICE_ADDRESS:51337/pair
+curl --data "XXXXXX-XXXX" http://DEVICE_ADDRESS:6947/pair
 ```
 
 Replace `DEVICE_ADDRESS` with the RevPi hostname or IP address.
 
-The provisioning image opens port `51337` for local pairing. After pairing, the
+The provisioning image opens port `6947` for local pairing. After pairing, the
 device appears in Nexigon and can use the included remote commands, terminal, and
 Rugix OTA integration.
 
@@ -192,7 +192,7 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
 - `rugix_apps`: Install the Rugix Apps runtime. Default: follows `docker`.
 - `rugix_admin`: Install and enable Rugix Admin. Default: `false`.
 - `nexigon`: Install and configure Nexigon integration. Default: `false`.
-- `nexigon_provisioning`: Enable local Nexigon pairing on port `51337`. Default:
+- `nexigon_provisioning`: Enable local Nexigon pairing on port `6947`. Default:
   `false`.
 - `version`: Version embedded in `/etc/rugix/system-build-info.json` when
   Nexigon is enabled. Default: the output name.

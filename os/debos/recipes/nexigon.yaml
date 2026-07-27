@@ -131,8 +131,8 @@ actions:
           echo "[ERROR] firewall-offline-cmd is required for Nexigon provisioning" >&2
           exit 1
       fi
-      if ! firewall-offline-cmd --query-port=51337/tcp >/dev/null 2>&1; then
-          firewall-offline-cmd --add-port=51337/tcp
+      if ! firewall-offline-cmd --query-port=6947/tcp >/dev/null 2>&1; then
+          firewall-offline-cmd --add-port=6947/tcp
       fi
       systemctl enable firewalld.service
   {{- end }}
