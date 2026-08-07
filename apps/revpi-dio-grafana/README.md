@@ -48,7 +48,7 @@ sudo apt-get install -y skopeo podman
 
 Download `rugix-bundler` from the Rugix release used by this repository:
 
-<https://github.com/rugix/rugix/releases/tag/v1.3.0-dev.5>
+<https://github.com/rugix/rugix/releases/tag/v1.3.0>
 
 Put the binary on your `PATH` as `rugix-bundler`, or set `RUGIX_BUNDLER` to its
 full path when running the build script.
@@ -93,7 +93,8 @@ The script installs:
 - Rugix Apps restore and recovery systemd units.
 - Runtime component publisher services for Docker, Raspberry Pi, and RevPi
   hardware metadata.
-- Rugix Admin, enabled by default on port `7492`.
+- Rugix Admin and the privileged Rugix Ctrl daemon, enabled by default on port
+  `7492`. The daemon permits unsigned operations for this example.
 
 The script does not convert the stock OS into a Rugix A/B boot-managed system.
 It only adds the runtime needed to try Docker-backed Rugix Apps.
@@ -198,4 +199,6 @@ http://<revpi>:7492
 ```
 
 It provides a local web interface for inspecting the Rugix system state and
-installed apps. Keep port `7492` reachable only from trusted networks.
+installed apps. Its daemon is configured with `dangerously-insecure = true`, so
+clients can bypass bundle verification and compatibility checks. Keep port
+`7492` reachable only from trusted networks.

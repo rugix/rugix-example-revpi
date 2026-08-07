@@ -5,10 +5,10 @@
 
 set -euo pipefail
 
-RUGIX_VERSION="${RUGIX_VERSION:-v1.3.0-dev.5}"
+RUGIX_VERSION="${RUGIX_VERSION:-v1.3.0}"
 RUGIX_TRIPLE="${RUGIX_TRIPLE:-}"
 RUGIX_BINARY_URL="${RUGIX_BINARY_URL:-}"
-RUGIX_ADMIN_VERSION="${RUGIX_ADMIN_VERSION:-v0.5.0-dev.3}"
+RUGIX_ADMIN_VERSION="${RUGIX_ADMIN_VERSION:-v0.5.0-dev.4}"
 RUGIX_ADMIN_BINARY_URL="${RUGIX_ADMIN_BINARY_URL:-}"
 RUGIX_ADMIN_ADDRESS="${RUGIX_ADMIN_ADDRESS:-0.0.0.0:7492}"
 RUGIX_INSTALL_DOCKER="${RUGIX_INSTALL_DOCKER:-true}"
@@ -771,6 +771,8 @@ install_rugix_admin_service() {
 
     if [ ! -e /etc/rugix/daemon.toml ]; then
         install_from_stdin 0644 /etc/rugix/daemon.toml <<'__RUGIX_DAEMON_CONFIG__'
+dangerously-insecure = true
+
 [features]
 factory-reset = true
 system-commit = true

@@ -10,7 +10,7 @@ architecture: {{ $arch }}
 actions:
   - action: download
     description: Download Rugix binaries
-    url: https://github.com/rugix/rugix/releases/download/v1.3.0-dev.5/binaries-aarch64-unknown-linux-musl.tar
+    url: https://github.com/rugix/rugix/releases/download/v1.3.0/binaries-aarch64-unknown-linux-musl.tar
     name: rugix-binaries
     unpack: true
 

@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 env:
-  RUGIX_VERSION: v1.3.0-dev.5
+  RUGIX_VERSION: v1.3.0
 
 jobs:
   app-bundle:

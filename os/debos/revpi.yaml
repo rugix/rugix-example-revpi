@@ -65,13 +65,13 @@
 {{- $nexigon_agent_version := or .nexigon_agent_version "git-e6ab0e7" -}}
 {{- $nexigon_provisioning := or .nexigon_provisioning "false" -}}
 {{- $rugix_ctrl_daemon := or .rugix_ctrl_daemon "false" -}}
-{{- $rugix_daemon_dangerously_insecure := or .rugix_daemon_dangerously_insecure "false" -}}
+{{- $rugix_daemon_dangerously_insecure := or .rugix_daemon_dangerously_insecure "true" -}}
 {{- $rugix_daemon_factory_reset := or .rugix_daemon_factory_reset .rugix_admin "false" -}}
 {{- $rugix_daemon_system_commit := or .rugix_daemon_system_commit .rugix_admin "false" -}}
 {{- $rugix_daemon_system_reboot := or .rugix_daemon_system_reboot .rugix_admin "false" -}}
 {{- $rugix_daemon_app_lifecycle := or .rugix_daemon_app_lifecycle .rugix_admin "false" -}}
 {{- $rugix_admin := or .rugix_admin "false" -}}
-{{- $rugix_admin_version := or .rugix_admin_version "v0.5.0-dev.3" -}}
+{{- $rugix_admin_version := or .rugix_admin_version "v0.5.0-dev.4" -}}
 {{- $rugix_admin_address := or .rugix_admin_address "0.0.0.0:7492" -}}
 {{- $version := or .version $output -}}
 {{- if eq $rugix_apps "true" -}}
