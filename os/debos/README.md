@@ -205,6 +205,8 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
   signature verification and compatibility checks. Default: `true` for this
   example.
 - `nexigon`: Install and configure Nexigon integration. Default: `false`.
+- `nexigon_agent_version`: Nexigon Agent release to install. Default:
+  `git-57e30ce`.
 - `nexigon_provisioning`: Enable local Nexigon pairing on port `6947`. Default:
   `false`.
 - `version`: Version embedded in `/etc/rugix/system-build-info.json` when
