@@ -180,6 +180,14 @@ actions:
       provisioning: {{ $nexigon_provisioning }}
   {{- end }}
 
+  {{- if and (eq $nexigon "true") (eq $rugix_apps "true") }}
+  - action: recipe
+    description: Install Nexigon Rugix Apps commands
+    recipe: recipes/nexigon-rugix-apps.yaml
+    variables:
+      arch: {{ $arch }}
+  {{- end }}
+
   {{- if eq $local_debs "true" }}
   - action: recipe
     description: Recipe for installing local debs

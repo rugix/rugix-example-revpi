@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: overlay
+    description: Install Nexigon Rugix Apps commands
+    source: ../overlays/nexigon-rugix-apps

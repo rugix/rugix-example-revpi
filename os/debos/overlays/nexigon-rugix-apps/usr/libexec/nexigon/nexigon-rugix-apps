@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+set -euo pipefail
+
+subcommand="${1:?missing subcommand}"
+
+case "${subcommand}" in
+    list)
+        output="$(rugix-ctrl apps list)"
+        jq -cn --argjson data "${output}" '{type: "Output", data: $data}'
+        ;;
+    info)
+        input="$(cat)"
+        app="$(jq -r '.app' <<<"${input}")"
+        output="$(rugix-ctrl apps info "${app}")"
+        jq -cn --argjson data "${output}" '{type: "Output", data: $data}'
+        ;;
+    start|stop|rollback|remove)
+        input="$(cat)"
+        app="$(jq -r '.app' <<<"${input}")"
+        rugix-ctrl apps "${subcommand}" "${app}"
+        ;;
+    *)
+        echo "unknown subcommand: ${subcommand}" >&2
+        exit 1
+        ;;
+esac

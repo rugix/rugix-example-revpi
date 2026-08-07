@@ -60,7 +60,8 @@ This image includes:
 - Docker and the Rugix Apps runtime.
 - Rugix Admin on port `7492`.
 - Nexigon Agent with local provisioning enabled.
-- Nexigon remote commands, terminal access, and Rugix OTA integration.
+- Nexigon remote commands, terminal access, Rugix OTA integration, and Rugix
+  Apps management.
 
 Flash the image to the RevPi storage. With `bmaptool`:
 
@@ -112,6 +113,13 @@ Replace `DEVICE_ADDRESS` with the RevPi hostname or IP address.
 The provisioning image opens port `6947` for local pairing. After pairing, the
 device appears in Nexigon and can use the included remote commands, terminal, and
 Rugix OTA integration.
+
+When `nexigon` and `rugix_apps` are both enabled, the image also installs the
+commands Nexigon Hub uses to deploy, inspect, start, stop, roll back, and remove
+Rugix Apps. The deployment command passes
+`--insecure-skip-bundle-verification`, matching this example's development-only
+security posture and allowing unsigned app bundles. Do not use this setting in
+production.
 
 ## Try Rugix Apps
 

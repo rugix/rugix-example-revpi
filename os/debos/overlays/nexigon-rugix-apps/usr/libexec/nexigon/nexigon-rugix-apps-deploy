@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+set -euo pipefail
+
+input="$(cat)"
+version_id="$(jq -r '.versionId' <<<"${input}")"
+asset_filename="$(jq -r '.assetFilename // empty' <<<"${input}")"
+
+echo "Resolving version ${version_id}..." >&2
+version_info="$(nexigon-agent repositories versions info "${version_id}")"
+
+if [ -n "${asset_filename}" ]; then
+    asset_id="$(jq -r --arg filename "${asset_filename}" \
+        '.assets[] | select(.filename == $filename) | .assetId' \
+        <<<"${version_info}")"
+else
+    asset_id="$(jq -r \
+        'first(.assets[] | select(.filename | endswith(".rugixb"))) | .assetId' \
+        <<<"${version_info}")"
+fi
+
+if [ -z "${asset_id}" ] || [ "${asset_id}" = "null" ]; then
+    echo "No matching .rugixb asset found in version ${version_id}" >&2
+    exit 1
+fi
+
+echo "Issuing download URL for ${asset_id}..." >&2
+download_url="$(nexigon-agent repositories issue-url "${asset_id}" | jq -r '.url')"
+
+echo "Installing app from ${download_url}..." >&2
+output="$(rugix-ctrl apps install \
+    --insecure-skip-bundle-verification \
+    "${download_url}")"
+jq -cn --argjson data "${output}" '{type: "Output", data: $data}'
