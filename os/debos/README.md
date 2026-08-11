@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
 
 This directory contains the debos workflow for Rugix-managed Revolution Pi
 images. It is a practical starting point for trying full-system updates, Rugix
-Apps, Rugix Admin, and optional Nexigon fleet management on real RevPi hardware.
+Apps, Rugix Admin, and Nexigon fleet management on real RevPi hardware.
 
 This workflow builds on KUNBUS's REVPI-4862 Rugix integration work for the RevPi
 debos workflow, specifically this
@@ -23,7 +23,7 @@ then adds:
 - Managed persistent state for selected system files and application data.
 - Docker-backed Rugix Apps support.
 - Optional Rugix Admin for local device management.
-- Optional Nexigon integration for provisioning, remote access, and OTA rollout.
+- Nexigon integration for provisioning, remote access, and OTA rollout.
 
 The Rugix image layout uses Raspberry Pi `tryboot` for A/B system updates. Updates
 are written to the inactive system slot, and the device can fall back if the new

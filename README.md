@@ -5,7 +5,7 @@ This repository provides examples that you can adapt to integrate
 (RevPi) system. Rugix is a toolkit for building embedded Linux systems and
 safely updating them in the field. The provided examples cover both
 fault-tolerant application updates and full OS updates. They also provide an
-optional ready-made [Nexigon](https://nexigon.cloud) integration for
+a ready-made [Nexigon](https://nexigon.cloud) integration for
 orchestrating fleet-wide OTA updates and remote device access.
 
 The [app example](./apps/revpi-dio-grafana) packages a Docker Compose workload
@@ -15,8 +15,8 @@ InfluxDB, and includes a Grafana dashboard.
 
 The [debos example](./os/debos) shows how to build a Rugix-managed RevPi OS image from the
 RevPi debos workflow. Beyond the standard workflow, it provides recipes for the Rugix Apps
-runtime, Rugix A/B system updates, and optional integrations with Rugix Admin and
-[Nexigon](https://nexigon.cloud) for device management at scale.
+runtime, Rugix A/B system updates, optional Rugix Admin integration, and
+[Nexigon](https://nexigon.cloud) integration for device management at scale.
 
 By adopting this stack for your device you get:
 
@@ -86,7 +86,7 @@ The repository is split into application examples and OS image examples:
   example and app-bundle build entry point.
 - [`os/debos`](os/debos/README.md): image build using RevPi's debos workflow,
   with Rugix A/B system updates, managed state, Rugix Apps support, optional
-  Rugix Admin, and optional Nexigon integration.
+  Rugix Admin, and Nexigon integration.
 
 ## Commercial Support
 
