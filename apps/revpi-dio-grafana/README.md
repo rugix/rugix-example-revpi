@@ -94,7 +94,9 @@ The script installs:
 - Runtime component publisher services for Docker, Raspberry Pi, and RevPi
   hardware metadata.
 - Rugix Admin and the privileged Rugix Ctrl daemon, enabled by default on port
-  `7492`. The daemon permits unsigned operations for this example.
+  `7492`. The setup script explicitly binds Rugix Admin to all interfaces so it
+  is reachable from the local network. The daemon permits unsigned operations
+  for this example.
 
 The script does not convert the stock OS into a Rugix A/B boot-managed system.
 It only adds the runtime needed to try Docker-backed Rugix Apps.

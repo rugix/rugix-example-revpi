@@ -4,7 +4,7 @@
 ---
 {{ $arch := .arch -}}
 {{- $version := or .version "v0.5.0-dev.4" -}}
-{{- $address := or .address "0.0.0.0:7492" -}}
+{{- $address := or .address "127.0.0.1:7492" -}}
 
 architecture: {{ $arch }}
 
