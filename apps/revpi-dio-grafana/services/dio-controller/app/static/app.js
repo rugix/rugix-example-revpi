@@ -1,4 +1,9 @@
 const connection = document.querySelector("#connection");
+const dioConfigurationEl = document.querySelector("#dio-configuration");
+const dioConfigurationMessageEl = document.querySelector(
+  "#dio-configuration-message"
+);
+const dioValuesEl = document.querySelector("#dio-values");
 const inputsEl = document.querySelector("#inputs");
 const outputsEl = document.querySelector("#outputs");
 const countersEl = document.querySelector("#counters");
@@ -102,6 +107,15 @@ function renderCounters(counters) {
 
 function render(data) {
   latest = data;
+  const configurationRequired = data.dio && data.dio.configured === false;
+  if (
+    configurationRequired &&
+    dioConfigurationMessageEl.textContent !== data.dio.message
+  ) {
+    dioConfigurationMessageEl.textContent = data.dio.message;
+  }
+  dioConfigurationEl.hidden = !configurationRequired;
+  dioValuesEl.hidden = configurationRequired;
   renderInputs(data.inputs);
   renderOutputs(data.outputs);
   renderCounters(data.counters);

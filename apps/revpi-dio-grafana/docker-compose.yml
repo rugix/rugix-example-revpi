@@ -36,11 +36,18 @@ services:
       INFLUX_ORG: "${INFLUX_ORG:-revpi}"
       INFLUX_TOKEN: "${INFLUX_TOKEN:-revpi-dio-token}"
       INFLUX_URL: http://influxdb:8086
+      DIO_RETRY_INTERVAL_SECONDS: "${DIO_RETRY_INTERVAL_SECONDS:-5}"
       POLL_INTERVAL_SECONDS: "${POLL_INTERVAL_SECONDS:-0.5}"
     volumes:
       - type: bind
-        source: /etc/revpi/config.rsc
-        target: /etc/revpi/config.rsc
+        source: /etc/revpi
+        target: /etc/revpi
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /var/www/revpi/pictory/projects
+        target: /var/www/revpi/pictory/projects
         read_only: true
         bind:
           create_host_path: false

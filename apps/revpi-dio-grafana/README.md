@@ -137,14 +137,21 @@ to use as a counter, set the corresponding `InputMode_N` to “Counter, rising
 edge” or “Counter, falling edge”. Save the configuration as the start config and
 reset the driver.
 
-The app bind-mounts the PiCtory configuration from:
+The app bind-mounts the RevPi and PiCtory configuration directories read-only
+from:
 
 ```text
-/etc/revpi/config.rsc
+/etc/revpi
+/var/www/revpi/pictory/projects
 ```
 
-If that file is missing, the controller container cannot start. The RevPi DIO
-supports at most 6 configured counters per module; this demo uses 4.
+PiCtory normally makes `/etc/revpi/config.rsc` an absolute symlink into its
+projects directory, so both mounts are needed for the link to resolve inside the
+container. If `config.rsc` is missing or does not include the expected DIO
+values, the app stays running and its control UI asks you to configure the DIO
+module. It retries the configuration automatically after you save it and reset
+the driver. The RevPi DIO supports at most 6 configured counters per module;
+this demo uses 4.
 
 ## Install the App
 

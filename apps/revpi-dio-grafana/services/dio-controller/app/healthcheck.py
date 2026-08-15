@@ -15,6 +15,8 @@ try:
         if response.status != 200:
             raise RuntimeError(f"unexpected status {response.status}")
         payload = json.loads(response.read().decode("utf-8"))
+    if payload.get("dio", {}).get("configured") is False:
+        raise SystemExit(0)
     timestamp = payload["timestamp"].replace("Z", "+00:00")
     sample_time = datetime.fromisoformat(timestamp)
     age = time.time() - sample_time.timestamp()

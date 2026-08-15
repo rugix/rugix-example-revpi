@@ -27,6 +27,14 @@ DIO_OUTPUT_NAMES = ("O_1", "O_2", "O_3", "O_4")
 WEB_BIND = "0.0.0.0"
 WEB_PORT = 8090
 CONFIG_RSC = "/etc/revpi/config.rsc"
+DIO_CONFIGURATION_MESSAGE = (
+    "The DIO module needs to be configured in PiCtory. Save the configuration "
+    "as the start configuration and reset the driver."
+)
+
+
+class DioConfigurationRequired(RuntimeError):
+    pass
 
 
 def parse_bool_value(value):
@@ -82,22 +90,39 @@ class InfluxStore:
 
 
 class RuntimeState:
-    def __init__(self, input_names, counter_names, output_names):
+    def __init__(self):
         self.lock = threading.RLock()
         self.payload = {
             "app": APP_NAME,
-            "timestamp": None,
-            "inputs": {name: {"state": None} for name in input_names},
-            "counters": {
-                name: {"value": None, "delta": None} for name in counter_names
+            "dio": {
+                "configured": False,
+                "message": DIO_CONFIGURATION_MESSAGE,
             },
-            "outputs": {name: {"state": None} for name in output_names},
+            "timestamp": None,
+            "inputs": {},
+            "counters": {},
+            "outputs": {},
         }
 
     def update(self, payload):
         with self.lock:
             self.payload = dict(payload)
             self.payload["app"] = APP_NAME
+            self.payload["dio"] = {"configured": True, "message": None}
+
+    def require_dio_configuration(self):
+        with self.lock:
+            self.payload = {
+                "app": APP_NAME,
+                "dio": {
+                    "configured": False,
+                    "message": DIO_CONFIGURATION_MESSAGE,
+                },
+                "timestamp": None,
+                "inputs": {},
+                "counters": {},
+                "outputs": {},
+            }
 
     def patch_output(self, name, state):
         with self.lock:
@@ -183,6 +208,13 @@ def make_web_handler(runtime_state, reader):
             except KeyError as exc:
                 write_json(self, HTTPStatus.NOT_FOUND, {"error": str(exc)})
                 return
+            except DioConfigurationRequired as exc:
+                write_json(
+                    self,
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {"error": str(exc)},
+                )
+                return
             except ValueError as exc:
                 write_json(self, HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                 return
@@ -244,14 +276,18 @@ class RevPiReader:
             monitoring=False,
             shared_procimg=True,
         )
-        self.inputs = self._resolve_ios(input_names, "input")
-        self.counters = self._resolve_ios(counter_names, "counter")
-        self.outputs = self._resolve_ios(output_names, "output")
-        if not self.inputs and not self.counters and not self.outputs:
-            raise RuntimeError(
-                "none of the expected DIO inputs, counters, or outputs were found; "
-                "check the PiCtory configuration"
-            )
+        try:
+            self.inputs = self._resolve_ios(input_names, "input")
+            self.counters = self._resolve_ios(counter_names, "counter")
+            self.outputs = self._resolve_ios(output_names, "output")
+            if not self.inputs and not self.counters and not self.outputs:
+                raise RuntimeError(
+                    "none of the expected DIO inputs, counters, or outputs were found; "
+                    "check the PiCtory configuration"
+                )
+        except Exception:
+            self.close()
+            raise
 
     def _resolve_ios(self, names, label):
         ios = {}
@@ -282,6 +318,50 @@ class RevPiReader:
             exit_fn()
 
 
+class RevPiDio:
+    def __init__(self, input_names, counter_names, output_names):
+        self.input_names = input_names
+        self.counter_names = counter_names
+        self.output_names = output_names
+        self.lock = threading.RLock()
+        self.reader = None
+
+    def connect(self):
+        reader = RevPiReader(
+            self.input_names,
+            self.counter_names,
+            self.output_names,
+        )
+        with self.lock:
+            self.reader = reader
+
+    def is_connected(self):
+        with self.lock:
+            return self.reader is not None
+
+    def read(self):
+        with self.lock:
+            if self.reader is None:
+                raise DioConfigurationRequired(DIO_CONFIGURATION_MESSAGE)
+            return self.reader.read()
+
+    def set_output(self, name, state):
+        with self.lock:
+            if self.reader is None:
+                raise DioConfigurationRequired(DIO_CONFIGURATION_MESSAGE)
+            return self.reader.set_output(name, state)
+
+    def disconnect(self):
+        with self.lock:
+            reader = self.reader
+            self.reader = None
+            if reader is not None:
+                reader.close()
+
+    def close(self):
+        self.disconnect()
+
+
 def counter_delta(previous, current):
     if previous is None:
         return 0
@@ -298,6 +378,7 @@ def main():
     )
 
     poll_interval = float(os.environ.get("POLL_INTERVAL_SECONDS", "0.5"))
+    dio_retry_interval = float(os.environ.get("DIO_RETRY_INTERVAL_SECONDS", "5"))
     last_counter_values = {}
 
     store = InfluxStore(
@@ -309,9 +390,9 @@ def main():
     store.wait_until_ready()
     store.ensure_bucket()
 
-    reader = RevPiReader(DIO_INPUT_NAMES, DIO_COUNTER_NAMES, DIO_OUTPUT_NAMES)
-    runtime_state = RuntimeState(DIO_INPUT_NAMES, DIO_COUNTER_NAMES, DIO_OUTPUT_NAMES)
-    web_server = start_web_server(WEB_BIND, WEB_PORT, runtime_state, reader)
+    runtime_state = RuntimeState()
+    dio = RevPiDio(DIO_INPUT_NAMES, DIO_COUNTER_NAMES, DIO_OUTPUT_NAMES)
+    web_server = start_web_server(WEB_BIND, WEB_PORT, runtime_state, dio)
 
     stop = False
 
@@ -327,10 +408,33 @@ def main():
     logging.info("tracking DIO counters: %s", ", ".join(DIO_COUNTER_NAMES))
     logging.info("controlling DIO outputs: %s", ", ".join(DIO_OUTPUT_NAMES))
 
+    next_dio_connection_attempt = time.monotonic()
     try:
         while not stop:
+            if not dio.is_connected():
+                now = time.monotonic()
+                if now < next_dio_connection_attempt:
+                    time.sleep(min(poll_interval, next_dio_connection_attempt - now))
+                    continue
+                try:
+                    dio.connect()
+                    last_counter_values.clear()
+                    logging.info("DIO configuration loaded")
+                except Exception as exc:
+                    logging.warning("DIO configuration is not ready: %s", exc)
+                    runtime_state.require_dio_configuration()
+                    next_dio_connection_attempt = now + dio_retry_interval
+                    continue
+
             sample_time = utc_now()
-            states, counters, outputs = reader.read()
+            try:
+                states, counters, outputs = dio.read()
+            except Exception as exc:
+                logging.warning("lost access to the configured DIO: %s", exc)
+                dio.disconnect()
+                runtime_state.require_dio_configuration()
+                next_dio_connection_attempt = time.monotonic() + dio_retry_interval
+                continue
             points = []
             latest_inputs = {}
             latest_counters = {}
@@ -378,7 +482,7 @@ def main():
     finally:
         web_server.shutdown()
         web_server.server_close()
-        reader.close()
+        dio.close()
 
 
 if __name__ == "__main__":

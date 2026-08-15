@@ -16,7 +16,18 @@
         <div class="status" id="connection">Connecting</div>
       </header>
 
-      <section class="grid">
+      <section
+        class="configuration-notice"
+        id="dio-configuration"
+        role="status"
+        aria-live="polite"
+        hidden
+      >
+        <h2>DIO Configuration Required</h2>
+        <p id="dio-configuration-message"></p>
+      </section>
+
+      <section class="grid" id="dio-values">
         <section class="panel">
           <div class="panel-head">
             <h2>Inputs</h2>
