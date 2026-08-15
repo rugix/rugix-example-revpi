@@ -211,7 +211,7 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
   Default: follows `rugix_admin`.
 - `rugix_admin`: Install and enable Rugix Admin and the Rugix Ctrl daemon.
   Default: `false`.
-- `rugix_admin_version`: Rugix Admin release tag. Default: `v0.5.0-dev.4`.
+- `rugix_admin_version`: Rugix Admin release tag. Default: `v0.5.0-rc.1`.
 - `rugix_admin_address`: Rugix Admin listen address. This demo defaults to
   `0.0.0.0:7492` so it is reachable from the local network; Rugix Admin itself
   defaults to loopback. Restrict the demo to a trusted network.
