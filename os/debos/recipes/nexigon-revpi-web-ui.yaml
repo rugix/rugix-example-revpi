@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+{{ $arch := .arch -}}
+
+architecture: {{ $arch }}
+
+actions:
+  - action: overlay
+    description: Install Nexigon RevPi Web UI configuration
+    source: ../overlays/nexigon-revpi-web-ui
+
+  - action: run
+    description: Enable the Nexigon RevPi Web UI listener
+    chroot: true
+    command: a2ensite nexigon-loopback
+
+  - action: run
+    description: Export the RevPi Web UI through Nexigon
+    chroot: false
+    command: |
+      cat >>"$ROOTDIR"/etc/nexigon/agent.toml <<'EOF'
+
+      [[exports]]
+      name = "RevPi Web UI"
+      protocol = "http"
+      port = 41444
+      EOF

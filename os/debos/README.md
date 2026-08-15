@@ -62,6 +62,7 @@ This image includes:
 - Nexigon Agent with local provisioning enabled.
 - Nexigon remote commands, terminal access, Rugix OTA integration, and Rugix
   Apps management.
+- Nexigon remote access to the RevPi Web UI.
 
 Flash the image to the RevPi storage. With `bmaptool`:
 
@@ -113,6 +114,12 @@ Replace `DEVICE_ADDRESS` with the RevPi hostname or IP address.
 The provisioning image opens port `6947` for local pairing. After pairing, the
 device appears in Nexigon and can use the included remote commands, terminal, and
 Rugix OTA integration.
+
+When Nexigon is enabled for a `basic`, `lite`, or `default` image, the build
+also exposes the RevPi Web UI through a loopback-only Apache listener. The
+corresponding Cockpit configuration accepts proxied browser origins below
+`nexigon.dev`, `nexigon.cloud`, and `nexigon.eu`. The `minimal` flavour does not
+install the RevPi web stack, so it does not include this export.
 
 When `nexigon` and `rugix_apps` are both enabled, the image also installs the
 commands Nexigon Hub uses to deploy, inspect, start, stop, roll back, and remove
@@ -214,7 +221,7 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
   example.
 - `nexigon`: Install and configure Nexigon integration. Default: `false`.
 - `nexigon_agent_version`: Nexigon Agent release to install. Default:
-  `git-ff6e1c3`.
+  `git-6c2874a`.
 - `nexigon_provisioning`: Enable local Nexigon pairing on port `6947`. Default:
   `false`.
 - `version`: Version embedded in `/etc/rugix/system-build-info.json` when
