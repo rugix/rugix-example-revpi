@@ -17,6 +17,40 @@ env:
   RUGIX_VERSION: v1.3.0
 
 jobs:
+  release-metadata:
+    name: Prepare Release Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      build_tag: ${{ steps.metadata.outputs.build_tag }}
+      floating_tag: ${{ steps.metadata.outputs.floating_tag }}
+      git_release_tag: ${{ steps.metadata.outputs.git_release_tag }}
+    steps:
+      - name: Generate release metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          timestamp=$(date -u +"%Y%m%d%H%M%S")
+          short_commit="${GITHUB_SHA::8}"
+          build_tag="build-${timestamp}-${short_commit}-${GITHUB_RUN_ID}"
+          floating_tag=""
+          git_release_tag=""
+
+          if [ "${GITHUB_REF_TYPE}" = "branch" ]; then
+              branch=${GITHUB_REF_NAME//\//-}
+              branch=${branch//[^A-Za-z0-9._-]/-}
+              floating_tag="latest-build-${branch}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+              git_release_tag="${GITHUB_REF_NAME}"
+          fi
+
+          {
+              echo "build_tag=${build_tag}"
+              echo "floating_tag=${floating_tag}"
+              echo "git_release_tag=${git_release_tag}"
+          } >>"${GITHUB_OUTPUT}"
+
   app-bundle:
     name: Build App Bundle
     runs-on: ubuntu-latest
@@ -77,6 +111,7 @@ jobs:
   debos:
     name: Build Debos Image (${{ matrix.variant }})
     runs-on: [self-hosted, nixos]
+    needs: release-metadata
     strategy:
       fail-fast: false
       matrix:
@@ -98,9 +133,9 @@ jobs:
         env:
           NEXIGON: ${{ matrix.nexigon }}
           OUTPUT: ${{ matrix.output }}
+          VERSION: ${{ needs.release-metadata.outputs.build_tag }}
         run: |
           set -euo pipefail
-          version="ci-${OUTPUT}-${GITHUB_SHA::12}"
 
           args=(
               -tflavour:lite
@@ -110,7 +145,7 @@ jobs:
               -trugix_admin:true
               -tgen_sbom:true
               -toutput:"${OUTPUT}"
-              -tversion:"${version}"
+              -tversion:"${VERSION}"
           )
           if [ "${NEXIGON}" = "true" ]; then
               args+=(
@@ -130,11 +165,17 @@ jobs:
 
           rm -rf dist
           mkdir -p dist
-          for src in build/"${OUTPUT}".* build/packages_"${OUTPUT}".csv build/sbom-"${OUTPUT}".json; do
+          for src in build/"${OUTPUT}".* build/packages_"${OUTPUT}".csv; do
               if [ -e "${src}" ]; then
                   cp "${src}" dist/
               fi
           done
+          sbom=build/sbom-"${OUTPUT}".json
+          if [ ! -e "${sbom}" ]; then
+              echo "expected SPDX SBOM '${sbom}' was not generated" >&2
+              exit 1
+          fi
+          cp "${sbom}" dist/"${OUTPUT}".spdx.json
 
           if ! find dist -type f -print -quit | grep -q .; then
               echo "no debos artifacts found" >&2
@@ -148,6 +189,75 @@ jobs:
           path: os/debos/dist/
           if-no-files-found: error
           compression-level: 0
+
+  publish-nexigon:
+    name: Publish Nexigon Release
+    runs-on: ubuntu-latest
+    concurrency:
+      group: nexigon-publication
+      cancel-in-progress: false
+    needs:
+      - release-metadata
+      - app-bundle
+      - debos
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+
+      - name: Install Nexigon CLI
+        run: curl -fsSL https://install.nexigon.dev/download-cli.sh | sh
+
+      - name: Publish Nexigon assets and tags
+        env:
+          ARTIFACT_DIR: dist
+          BUILD_TAG: ${{ needs.release-metadata.outputs.build_tag }}
+          FLOATING_TAG: ${{ needs.release-metadata.outputs.floating_tag }}
+          GIT_RELEASE_TAG: ${{ needs.release-metadata.outputs.git_release_tag }}
+          NEXIGON_CLI: ./nexigon-cli
+          NEXIGON_HUB_URL: ${{ secrets.NEXIGON_HUB_URL }}
+          NEXIGON_REPOSITORY: ${{ secrets.NEXIGON_REPOSITORY }}
+          NEXIGON_TOKEN: ${{ secrets.NEXIGON_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          publish_rolling="false"
+          publish_stable="false"
+          floating_tag="${FLOATING_TAG}"
+          if [ "${GITHUB_REF_TYPE}" = "branch" ]; then
+              remote_ref="refs/remotes/origin/${GITHUB_REF_NAME}"
+              if ! remote_commit=$(git rev-parse --verify "${remote_ref}" 2>/dev/null) \
+                  || [ "${remote_commit}" != "${GITHUB_SHA}" ]; then
+                  echo "[INFO] a newer '${GITHUB_REF_NAME}' build exists; not moving channel tags"
+                  floating_tag=""
+              elif [ "${GITHUB_REF_NAME}" = "main" ]; then
+                  publish_rolling="true"
+              fi
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+              latest_tag=$(git tag --list --sort=-version:refname | sed -n '1p')
+              if [ "${latest_tag}" = "${GITHUB_REF_NAME}" ]; then
+                  publish_stable="true"
+              fi
+          fi
+
+          config="${RUNNER_TEMP}/nexigon-cli.toml"
+          umask 077
+          printf 'hub-url = "%s"\ntoken = "%s"\n' \
+              "${NEXIGON_HUB_URL}" "${NEXIGON_TOKEN}" >"${config}"
+          export NEXIGON_CLI_CONFIG="${config}"
+          export FLOATING_TAG="${floating_tag}"
+          export PUBLISH_ROLLING="${publish_rolling}"
+          export PUBLISH_STABLE="${publish_stable}"
+
+          ./scripts/publish-nexigon-release.sh
 
   publish-release:
     name: Publish GitHub Release
