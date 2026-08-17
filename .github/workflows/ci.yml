@@ -117,10 +117,10 @@ jobs:
       matrix:
         include:
           - variant: rugix-apps
-            output: revpi-rugix-apps
+            output: revpi-rugix
             nexigon: "false"
           - variant: rugix-apps-nexigon
-            output: revpi-rugix-apps-nexigon
+            output: revpi-rugix-nexigon
             nexigon: "true"
     steps:
       - name: Checkout

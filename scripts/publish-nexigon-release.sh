@@ -182,8 +182,7 @@ if [ ! -d "$ARTIFACT_DIR" ]; then
 fi
 
 for expected_dir in \
-    "$ARTIFACT_DIR/revpi-rugix-apps" \
-    "$ARTIFACT_DIR/revpi-rugix-apps-nexigon" \
+    "$ARTIFACT_DIR/revpi-rugix-nexigon" \
     "$ARTIFACT_DIR/revpi-dio-grafana-app"; do
     if [ ! -d "$expected_dir" ]; then
         echo "[ERROR] expected artifact directory '$expected_dir' does not exist" >&2
@@ -192,10 +191,7 @@ for expected_dir in \
 done
 
 mapfile -d '' os_assets < <(
-    find \
-        "$ARTIFACT_DIR/revpi-rugix-apps" \
-        "$ARTIFACT_DIR/revpi-rugix-apps-nexigon" \
-        -type f -print0 \
+    find "$ARTIFACT_DIR/revpi-rugix-nexigon" -type f -print0 \
         | sort -z
 )
 mapfile -d '' app_assets < <(
