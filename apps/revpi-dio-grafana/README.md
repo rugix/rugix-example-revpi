@@ -110,13 +110,13 @@ You can also flash a prebuilt image from this repository's GitHub releases page:
 Use an image artifact named like:
 
 ```text
-revpi-rugix-apps.img.zst
+revpi-rugix.img.zst
 ```
 
 Flash it to the RevPi storage. For example, with `bmaptool`:
 
 ```sh
-sudo bmaptool copy revpi-rugix-apps.img.zst /dev/sdX
+sudo bmaptool copy revpi-rugix.img.zst /dev/sdX
 ```
 
 Replace `/dev/sdX` with the actual target device. Then boot the RevPi and log in

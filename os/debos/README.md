@@ -50,8 +50,8 @@ Download the latest release artifacts from:
 For a first test, download the provisioning image and the matching `.bmap` file:
 
 ```text
-revpi-rugix-apps-nexigon.img.zst
-revpi-rugix-apps-nexigon.bmap
+revpi-rugix-nexigon.img.zst
+revpi-rugix-nexigon.bmap
 ```
 
 This image includes:
@@ -67,7 +67,7 @@ This image includes:
 Flash the image to the RevPi storage. With `bmaptool`:
 
 ```sh
-sudo bmaptool copy revpi-rugix-apps-nexigon.img.zst /dev/sdX
+sudo bmaptool copy revpi-rugix-nexigon.img.zst /dev/sdX
 ```
 
 Replace `/dev/sdX` with the actual target device. Boot the RevPi and log in with:
@@ -170,7 +170,7 @@ Build a Rugix image with Docker-backed Rugix Apps and Rugix Admin:
     -tdocker:true \
     -trugix_apps:true \
     -trugix_admin:true \
-    -toutput:revpi-rugix-apps \
+    -toutput:revpi-rugix \
     revpi.yaml
 ```
 
@@ -184,7 +184,7 @@ Build the provisioning image used for the recommended first test:
     -trugix_admin:true \
     -tnexigon:true \
     -tnexigon_provisioning:true \
-    -toutput:revpi-rugix-apps-nexigon \
+    -toutput:revpi-rugix-nexigon \
     -tversion:"demo-$(date +%Y%m%d%H%M%S)" \
     revpi.yaml
 ```
@@ -192,10 +192,10 @@ Build the provisioning image used for the recommended first test:
 Artifacts are written to `build/`. For a Rugix image, expect files like:
 
 ```text
-build/revpi-rugix-apps-nexigon.img.zst
-build/revpi-rugix-apps-nexigon.bmap
-build/revpi-rugix-apps-nexigon.rugixb
-build/revpi-rugix-apps-nexigon.rugixb-hash
+build/revpi-rugix-nexigon.img.zst
+build/revpi-rugix-nexigon.bmap
+build/revpi-rugix-nexigon.rugixb
+build/revpi-rugix-nexigon.rugixb-hash
 ```
 
 The `.img.zst` file is the flashable image. The `.rugixb` file is a full-system
