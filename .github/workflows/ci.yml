@@ -33,7 +33,7 @@ jobs:
 
           timestamp=$(date -u +"%Y%m%d%H%M%S")
           short_commit="${GITHUB_SHA::8}"
-          build_tag="build-${timestamp}-${short_commit}-${GITHUB_RUN_ID}"
+          build_tag="build-${timestamp}-${short_commit}"
           floating_tag=""
           git_release_tag=""
 
