@@ -109,18 +109,16 @@ jobs:
           compression-level: 0
 
   debos:
-    name: Build Debos Image (${{ matrix.variant }})
+    name: Build RevPi Image (${{ matrix.output }})
     runs-on: [self-hosted, nixos]
     needs: release-metadata
     strategy:
       fail-fast: false
       matrix:
         include:
-          - variant: rugix-apps
-            output: revpi-rugix
+          - output: revpi-rugix
             nexigon: "false"
-          - variant: rugix-apps-nexigon
-            output: revpi-rugix-nexigon
+          - output: revpi-rugix-nexigon
             nexigon: "true"
     steps:
       - name: Checkout
