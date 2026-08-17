@@ -1,0 +1,95 @@
+#!/bin/sh
+
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+set -eu
+
+CONFIG_PATH="${NEXIGON_REVPI_PICTORY_CONFIG_PATH:-/etc/revpi/config.rsc}"
+PROPERTY_NAME="${NEXIGON_REVPI_PICTORY_PROPERTY_NAME:-com.kunbus.revpi.pictory.configuration}"
+AGENT_SOCKET_PATH="${NEXIGON_AGENT_SOCKET_PATH:-/run/nexigon/agent/control/socket.sock}"
+
+if [ ! -S "$AGENT_SOCKET_PATH" ]; then
+    echo "[INFO] Nexigon Agent local API is not ready: $AGENT_SOCKET_PATH" >&2
+    exit 0
+fi
+
+if [ ! -e "$CONFIG_PATH" ]; then
+    property_value=null
+else
+    if ! property_value=$(jq --compact-output --exit-status --slurp \
+        '
+            if length != 1 or (.[0] | type) != "object" then
+                error("expected one object")
+            else
+                .[0]
+            end
+            | if (.App | type) != "object"
+                or (.Summary | type) != "object"
+                or (.Devices | type) != "array"
+            then
+                error("expected PiCtory configuration")
+            else
+                {
+                    pictoryVersion: .App.version,
+                    savedAt: .App.saveTS,
+                    inputImageBytes: .Summary.inpTotal,
+                    outputImageBytes: .Summary.outTotal,
+                    devices: [
+                        .Devices[]
+                        | if type != "object" then
+                            error("expected PiCtory device object")
+                        else
+                            {
+                                model: (
+                                    .id
+                                    | if type != "string" or length == 0 then
+                                        error("expected PiCtory device ID")
+                                    else
+                                        sub("^device_"; "")
+                                        | split("_")[0]
+                                    end
+                                ),
+                                name,
+                                productType,
+                                position,
+                                offsetBytes: .offset
+                            }
+                        end
+                    ]
+                }
+            end
+        ' \
+        "$CONFIG_PATH"); then
+        echo "[ERROR] PiCtory configuration is invalid: $CONFIG_PATH" >&2
+        exit 0
+    fi
+fi
+
+if ! current_property=$(nexigon-agent device properties get "$PROPERTY_NAME"); then
+    echo "[ERROR] unable to read current Nexigon device property: $PROPERTY_NAME" >&2
+    exit 1
+fi
+
+if ! property_state=$(printf '%s\n%s\n' "$current_property" "$property_value" \
+    | jq --exit-status --raw-output --slurp '
+        if length != 2 then
+            error("expected current and proposed property values")
+        elif .[0].result == "NotFound" then
+            "changed"
+        elif .[0].result == "Found" then
+            if .[0].value == .[1] then "unchanged" else "changed" end
+        else
+            error("unexpected device property result")
+        end
+    '); then
+    echo "[ERROR] invalid response while reading device property: $PROPERTY_NAME" >&2
+    exit 1
+fi
+
+if [ "$property_state" = "unchanged" ]; then
+    exit 0
+fi
+
+nexigon-agent device properties set "$PROPERTY_NAME" "$property_value"

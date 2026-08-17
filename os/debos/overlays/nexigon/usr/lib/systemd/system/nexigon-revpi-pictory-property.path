@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+[Unit]
+Description=Watch the RevPi PiCtory Configuration
+
+[Path]
+PathChanged=/var/www/revpi/pictory/projects/_config.rsc
+PathChanged=/run/nexigon/agent/control/socket.sock
+Unit=nexigon-revpi-pictory-property.service
+
+[Install]
+WantedBy=multi-user.target

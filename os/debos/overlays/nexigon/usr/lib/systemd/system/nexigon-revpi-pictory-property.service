@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Silitics GmbH
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+[Unit]
+Description=Publish the RevPi PiCtory Configuration to Nexigon
+Wants=nexigon-agent.service
+After=nexigon-agent.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nexigon/nexigon-revpi-pictory-property
+Restart=on-failure
+RestartSec=60s
+
+[Install]
+WantedBy=multi-user.target

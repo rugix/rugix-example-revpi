@@ -159,5 +159,7 @@ actions:
     command: >
       systemctl enable
       nexigon-agent.service
+      nexigon-revpi-pictory-property.path
+      nexigon-revpi-pictory-property.service
       nexigon-rugix-watchdog.timer
       nexigon-rugix-ota.timer

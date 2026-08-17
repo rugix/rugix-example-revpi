@@ -63,6 +63,7 @@ This image includes:
 - Nexigon remote commands, terminal access, Rugix OTA integration, and Rugix
   Apps management.
 - Nexigon remote access to the RevPi Web UI.
+- PiCtory dashboard data as a Nexigon device property.
 
 Flash the image to the RevPi storage. With `bmaptool`:
 
@@ -120,6 +121,18 @@ also exposes the RevPi Web UI through a loopback-only Apache listener. The
 corresponding Cockpit configuration accepts proxied browser origins below
 `nexigon.dev`, `nexigon.cloud`, and `nexigon.eu`. The `minimal` flavour does not
 install the RevPi web stack, so it does not include this export.
+
+Nexigon-enabled images publish selected PiCtory dashboard data from
+`/etc/revpi/config.rsc` to the
+`com.kunbus.revpi.pictory.configuration` device property. The property is
+updated when the configuration changes and only when its value differs.
+
+Inspect the published property on the device with:
+
+```sh
+nexigon-agent device properties get \
+    com.kunbus.revpi.pictory.configuration | jq
+```
 
 When `nexigon` and `rugix_apps` are both enabled, the image also installs the
 commands Nexigon Hub uses to deploy, inspect, start, stop, roll back, and remove
