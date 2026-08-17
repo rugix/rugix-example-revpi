@@ -2,11 +2,11 @@
 
 This repository provides examples that you can adapt to integrate
 [Rugix](https://rugix.org) into a [Revolution Pi](https://revolutionpi.com/)
-(RevPi) system. Rugix is a toolkit for building embedded Linux systems and
-safely updating them in the field. The provided examples cover both
+(RevPi) system. Rugix is an open-source toolkit for building and maintaining
+robust Linux-powered products. The provided examples cover both
 fault-tolerant application updates and full OS updates. They also provide an
-a ready-made [Nexigon](https://nexigon.cloud) integration for
-orchestrating fleet-wide OTA updates and remote device access.
+optional [Nexigon](https://nexigon.cloud) integration for remote access and
+fleet-wide update orchestration.
 
 The [app example](./apps/revpi-dio-grafana) packages a Docker Compose workload
 as a Rugix App bundle. It reads RevPi DIO inputs and counters, exposes a small
@@ -21,18 +21,18 @@ runtime, Rugix A/B system updates, optional Rugix Admin integration, and
 By adopting this stack for your device you get:
 
 - CI/CD-compatible declarative image building pipeline.
-- Fault tolerant A/B system updates with Raspberry Pi's `tryboot` mechanism.
+- Fault-tolerant A/B system updates with Raspberry Pi's `tryboot` mechanism.
 - SBOM generation for compliance, e.g., with the Cyber Resilience Act.
 - Fault-tolerant [application updates](https://rugix.org/docs/ctrl/application-management/), e.g., of Docker Compose stacks.
 - [Managed system state](https://rugix.org/docs/ctrl/state-management/) for robustness and easy factory resets.
 - Integration with [Nexigon](https://nexigon.cloud) for end-to-end device management.
 
 > [!NOTE]
-> **Support:** This repository is subject to [Tier 3: Example Integrations](https://rugix.org/support-commitment/#tier-example-integration) of our Support Commitment.
+> **Support:** This repository is covered by [Tier 3: Example Integration](https://rugix.org/support-commitment/#tier-example-integration) of the Rugix Support Commitment.
 
 > [!CAUTION]
 > The examples in this repository are provided for demonstration purposes. As such, they may rely
-> on insecure default configarations (hardcoded credentials, exposed services, …) to make it easy
+> on insecure default configurations (hardcoded credentials, exposed services, …) to make it easy
 > to get started. **Do not use the provided examples in production without proper hardening.**
 
 ## Quick Start
@@ -43,7 +43,7 @@ If you want to start hands-on, pick the path that matches what you want to try:
   [app example](apps/revpi-dio-grafana/README.md) to build and
   install a Rugix App bundle for a Docker Compose application without
   replacing the base OS.
-- **Custom image with debos:** start with the [dobos example](os/debos/README.md)
+- **Custom image with debos:** start with the [debos example](os/debos/README.md)
   when you want to build a custom OS image with RevPi's debos workflow and Rugix for
   system and application updates.
 
@@ -55,7 +55,7 @@ For application updates, Rugix lets you update workloads independently from the
 base OS. This matters because applications typically evolve at a different
 cadence than the base OS and different devices may need to run different
 applications on top of it. By separating both, you gain flexibility and reduce
-maintenance effort. Rugix provides an efficient, secure, and safe mechanism for
+maintenance effort. Rugix Ctrl provides an efficient, secure, and safe mechanism for
 installing and orchestrating application workloads (automated rollback in case
 of failures, cryptographic signature verification, compatibility checks, delta
 delivery). It can update anything from standalone binary services to full Docker
