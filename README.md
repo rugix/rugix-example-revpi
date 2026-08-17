@@ -27,9 +27,6 @@ By adopting this stack for your device you get:
 - [Managed system state](https://rugix.org/docs/ctrl/state-management/) for robustness and easy factory resets.
 - Integration with [Nexigon](https://nexigon.cloud) for end-to-end device management.
 
-> [!NOTE]
-> **Support:** This repository is covered by [Tier 3: Example Integration](https://rugix.org/support-commitment/#tier-example-integration) of the Rugix Support Commitment.
-
 > [!CAUTION]
 > The examples in this repository are provided for demonstration purposes. As such, they may rely
 > on insecure default configurations (hardcoded credentials, exposed services, …) to make it easy
@@ -87,6 +84,12 @@ The repository is split into application examples and OS image examples:
 - [`os/debos`](os/debos/README.md): image build using RevPi's debos workflow,
   with Rugix A/B system updates, managed state, Rugix Apps support, optional
   Rugix Admin, and Nexigon integration.
+
+## Support
+
+This repository is covered by
+[Tier 3: Example Integration](https://rugix.org/support-commitment/#tier-example-integration)
+of the Rugix Support Commitment.
 
 ## Commercial Support
 
