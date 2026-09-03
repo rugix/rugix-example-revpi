@@ -69,7 +69,7 @@ fi
 
 podman_flags=(--rm --entrypoint /bin/bash)
 if [ -e /dev/kvm ]; then
-    podman_flags+=(--device /dev/kvm)
+    podman_flags+=(--device /dev/kvm --group-add keep-groups)
 fi
 if [ -t 0 ] && [ -t 1 ]; then
     podman_flags+=(-it)
