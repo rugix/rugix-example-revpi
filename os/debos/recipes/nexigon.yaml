@@ -8,7 +8,7 @@
 {{- $tag := or .tag "stable" -}}
 {{- $interval := or .interval "4h" -}}
 {{- $watchdog_timeout := or .watchdog_timeout "300" -}}
-{{- $agent_version := or .agent_version "git-04758ca" -}}
+{{- $agent_version := or .agent_version "git-7755859" -}}
 {{- $provisioning := or .provisioning "false" -}}
 
 architecture: {{ $arch }}
@@ -92,6 +92,10 @@ actions:
       [terminal]
       enabled = true
       user = "root"
+
+      [forwarding]
+      enabled = true
+      allow-all-ports = true
       EOF
 
       {{- if eq $provisioning "true" }}
