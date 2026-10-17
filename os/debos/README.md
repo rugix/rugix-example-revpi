@@ -60,8 +60,8 @@ This image includes:
 - Docker and the Rugix Apps runtime.
 - Rugix Admin on port `7492`.
 - Nexigon Agent with local provisioning enabled.
-- Nexigon remote commands, terminal access, Rugix OTA integration, and Rugix
-  Apps management.
+- Nexigon remote commands, terminal access, system updates through Nexigon
+  Agent, and Rugix Apps management.
 - Nexigon forwarding to all TCP ports on the device loopback interface.
 - Nexigon remote access to the RevPi Web UI.
 - PiCtory dashboard data as a Nexigon device property.
@@ -114,9 +114,11 @@ curl --data "XXXXXX-XXXX" http://DEVICE_ADDRESS:6947/pair
 Replace `DEVICE_ADDRESS` with the RevPi hostname or IP address.
 
 The provisioning image opens port `6947` for local pairing. After pairing, the
-device appears in Nexigon and can use the included remote commands, terminal, and
-Rugix OTA integration. The example permits Nexigon users with remote-access
-permissions to forward any TCP port on the device loopback interface.
+device appears in Nexigon and can use the included remote commands and terminal.
+Nexigon Agent installs system updates with Rugix Ctrl. Select the release for a
+device with **Configure Updates** on its device page. The example permits
+Nexigon users with remote-access permissions to forward any TCP port on the
+device loopback interface.
 
 When Nexigon is enabled for a `basic`, `lite`, or `default` image, the build
 also exposes the RevPi Web UI through a loopback-only Apache listener. The
@@ -237,8 +239,9 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
   signature verification and compatibility checks. Default: `true` for this
   example.
 - `nexigon`: Install and configure Nexigon integration. Default: `false`.
-- `nexigon_agent_version`: Nexigon Agent release to install. Default:
-  `v0.6.0`.
+- `nexigon_agent_version`: Nexigon Agent version to install, either a release
+  such as `v0.6.0` or a build such as `git-5e3f543`. Default: `git-5e3f543`, a
+  build with the system update integration of Nexigon Agent.
 - `nexigon_provisioning`: Enable local Nexigon pairing on port `6947`. Default:
   `false`.
 - `version`: Version embedded in `/etc/rugix/system-build-info.json` when
