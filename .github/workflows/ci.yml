@@ -110,7 +110,7 @@ jobs:
 
   debos:
     name: Build RevPi Image (${{ matrix.output }})
-    runs-on: [self-hosted, nixos]
+    runs-on: [self-hosted, si-large]
     needs: release-metadata
     strategy:
       fail-fast: false
