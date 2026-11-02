@@ -71,10 +71,11 @@ Rugix component metadata, and all required container images. During installation
 Rugix loads the bundled images and starts the Compose workload from the installed
 app generation.
 
-Rugix Bundler 1.4.0 stores bundled images in the device content store by default.
-Upgrade the device to Rugix Ctrl 1.4.0 before installing these bundles. If the
-system must support rollback to Rugix Ctrl 1.3, add `--image-location file` to
-the packing command in `build.sh` to keep the images in the generation directory.
+By default, bundles built with Rugix Bundler 1.4.0 install container images in a
+shared content store on the device, outside the app generation directory. These
+bundles require Rugix Ctrl 1.4.0. If the system must support rollback to Rugix
+Ctrl 1.3, add `--image-location file` to the `apps pack docker-compose` command
+in `build.sh` to keep the images in the generation directory.
 
 ## Prepare the RevPi
 
