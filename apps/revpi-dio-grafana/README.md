@@ -48,7 +48,7 @@ sudo apt-get install -y skopeo podman
 
 Download `rugix-bundler` from the Rugix release used by this repository:
 
-<https://github.com/rugix/rugix/releases/tag/v1.3.0>
+<https://github.com/rugix/rugix/releases/tag/v1.4.0>
 
 Put the binary on your `PATH` as `rugix-bundler`, or set `RUGIX_BUNDLER` to its
 full path when running the build script.
@@ -71,6 +71,12 @@ Rugix component metadata, and all required container images. During installation
 Rugix loads the bundled images and starts the Compose workload from the installed
 app generation.
 
+By default, bundles built with Rugix Bundler 1.4.0 install container images in a
+shared content store on the device, outside the app generation directory. These
+bundles require Rugix Ctrl 1.4.0. If the system must support rollback to Rugix
+Ctrl 1.3, add `--image-location file` to the `apps pack docker-compose` command
+in `build.sh` to keep the images in the generation directory.
+
 ## Prepare the RevPi
 
 You need a RevPi that has Docker, Docker Compose, `rugix-ctrl`, and the Rugix
@@ -89,7 +95,7 @@ sudo bash setup-rugix-apps.sh
 The script installs:
 
 - Docker and the Docker Compose plugin.
-- `rugix-ctrl`, `rugix-admin`, and `rugix-bundler`.
+- Rugix Ctrl and Rugix Bundler 1.4.0, and Rugix Admin 0.6.0.
 - Rugix Apps restore and recovery systemd units.
 - Runtime component publisher services for Docker, Raspberry Pi, and RevPi
   hardware metadata.

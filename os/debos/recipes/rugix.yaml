@@ -10,7 +10,7 @@ architecture: {{ $arch }}
 actions:
   - action: download
     description: Download Rugix binaries
-    url: https://github.com/rugix/rugix/releases/download/v1.3.0/binaries-aarch64-unknown-linux-musl.tar
+    url: https://github.com/rugix/rugix/releases/download/v1.4.0/binaries-aarch64-unknown-linux-musl.tar
     name: rugix-binaries
     unpack: true
 
@@ -74,10 +74,11 @@ actions:
         "$ROOTDIR"/run/rugix/mounts/config/
 
   - action: apt
-    description: Install fdisk for various rugix-ctrl commands
+    description: Install Rugix Ctrl runtime dependencies
     recommends: true
     packages:
       - fdisk
+      - ca-certificates
 
   # this is only relevant for images of type "revpi" for now. disable it so it
   # doesn't run when a rugix image is built.

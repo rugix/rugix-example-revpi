@@ -8,8 +8,9 @@ SPDX-License-Identifier: GPL-2.0-or-later
 # Try Rugix OS Images on Revolution Pi
 
 This directory contains the debos workflow for Rugix-managed Revolution Pi
-images. It is a practical starting point for trying full-system updates, Rugix
-Apps, Rugix Admin, and Nexigon fleet management on real RevPi hardware.
+images with Rugix Ctrl 1.4.0 and optional Rugix Admin 0.6.0. It is a practical
+starting point for trying full-system updates, Rugix Apps, Rugix Admin, and
+Nexigon fleet management on real RevPi hardware.
 
 This workflow builds on KUNBUS's REVPI-4862 Rugix integration work for the RevPi
 debos workflow, specifically this
@@ -226,7 +227,7 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
   Default: follows `rugix_admin`.
 - `rugix_admin`: Install and enable Rugix Admin and the Rugix Ctrl daemon.
   Default: `false`.
-- `rugix_admin_version`: Rugix Admin release tag. Default: `v0.5.0`.
+- `rugix_admin_version`: Rugix Admin release tag. Default: `v0.6.0`.
 - `rugix_admin_address`: Rugix Admin listen address. This demo defaults to
   `0.0.0.0:7492` so it is reachable from the local network; Rugix Admin itself
   defaults to loopback. Restrict the demo to a trusted network.
