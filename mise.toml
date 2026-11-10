@@ -1,0 +1,29 @@
+[tools]
+"github:rugix/rugix" = { version = "1.4.0", matching = "unknown-linux-musl.tar", filter_bins = "rugix-bundler" }
+"github:nexigon/nexigon" = { version = "0.6.0", matching = "unknown-linux-musl.tar.gz", filter_bins = "nexigon-cli" }
+
+[tasks."build"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Build the RevPi DIO/Grafana app bundle."
+run = "bash apps/revpi-dio-grafana/build.sh"
+
+[tasks."build:os"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Build a RevPi OS image; pass debos options and recipe."
+dir = "{{config_root}}/os/debos"
+run = "./run-debos \"$@\""
+
+[tasks."publish"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Publish release artifacts to Nexigon."
+run = "bash scripts/publish-nexigon-release.sh \"$@\""
+
+[tasks."build:os:release"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Build a debos release; set OUTPUT and VERSION, optionally NEXIGON."
+run = "bash os/debos/build-release.sh"
+
+[tasks."release:collect"]
+shell = "nix develop \"{{config_root}}\" --command bash -euo pipefail -c"
+description = "Collect debos artifacts; set OUTPUT."
+run = "bash os/debos/collect-release.sh"

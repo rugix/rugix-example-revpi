@@ -107,3 +107,33 @@ headers for the authoritative per-file license.
 ---
 
 Made with ❤️ for OSS by [Silitics](https://www.silitics.com)
+
+## Development Tasks
+
+Install Nix with flakes enabled and [mise](https://mise.jdx.dev/), then run
+`mise install` for the pinned Rugix Bundler and Nexigon CLI. Native tasks
+select Nix for Podman, Skopeo, jq, and compression tools on x86-64 and
+AArch64 Linux. `mise run build` builds the app bundle, which targets ARM64.
+ARM64 emulation is required on x86-64 hosts; see the
+[app build prerequisites](apps/revpi-dio-grafana/README.md).
+`mise run build:os -- <debos-options> revpi.yaml` invokes the OS builder,
+which requires Podman.
+
+The release scripts used by CI are also available locally. For example:
+
+```sh
+OUTPUT=revpi-rugix VERSION=build-example mise run build:os:release
+OUTPUT=revpi-rugix mise run release:collect
+```
+
+Set `NEXIGON=true` to include Nexigon in the release image. Use
+`mise run publish` only with prepared artifacts and the publisher's required
+Nexigon configuration.
+
+Publication requires an authenticated Nexigon CLI (optionally configured
+through `NEXIGON_CLI_CONFIG`), `NEXIGON_REPOSITORY`, and `BUILD_TAG` matching
+the baked image version. Assemble the downloaded or locally collected assets
+under root `dist/revpi-rugix-nexigon/` and `dist/revpi-dio-grafana-app/`, as CI
+does. Local OS collection writes `os/debos/dist/`; copy those files into the
+appropriate root publication directory. Include the app bundle and its hash
+in the app directory. `ARTIFACT_DIR` can select a different publication root.
