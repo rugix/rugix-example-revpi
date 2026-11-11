@@ -8,7 +8,7 @@
 {{- $tag := or .tag "stable" -}}
 {{- $interval := or .interval "4h" -}}
 {{- $watchdog_timeout := or .watchdog_timeout "300" -}}
-{{- $agent_version := or .agent_version "v0.6.0" -}}
+{{- $agent_version := or .agent_version "git-5e3f543" -}}
 {{- $provisioning := or .provisioning "false" -}}
 
 architecture: {{ $arch }}
@@ -48,6 +48,27 @@ actions:
 
       toml_escape() {
           printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+      }
+
+      # Convert a time span such as "4h" or "1h 30min" to seconds.
+      timespan_secs() {
+          total=0
+          for part in $1; do
+              number="${part%%[!0-9]*}"
+              case "${part#"$number"}" in
+                  d) factor=86400 ;;
+                  h) factor=3600 ;;
+                  m | min) factor=60 ;;
+                  s | "") factor=1 ;;
+                  *) number="" ;;
+              esac
+              if [ -z "$number" ]; then
+                  echo "[ERROR] invalid time span '$1'" >&2
+                  return 1
+              fi
+              total=$((total + number * factor))
+          done
+          echo "$total"
       }
 
       if [ "$provisioning" != "true" ]; then
@@ -106,20 +127,25 @@ actions:
       EOF
       {{- end }}
 
-      sed -i "s|@@INTERVAL@@|{{ $interval }}|g" \
-          "$ROOTDIR"/usr/lib/systemd/system/nexigon-rugix-ota.timer
+      # System updates with the Rugix integration of the agent.
+      interval_secs="$(timespan_secs "{{ $interval }}")" || exit 1
+      cat >>"$ROOTDIR"/etc/nexigon/agent.toml <<EOF
+
+      [integrations.rugix.system-updates]
+      enabled = true
+      use-bundle-hash = true
+      check-interval-secs = ${interval_secs}
+      EOF
+      if [ -n "${NEXIGON_REPOSITORY:-}" ] && [ -n "${NEXIGON_PACKAGE:-}" ]; then
+          printf 'path = "%s/%s/%s"\n' \
+              "$(toml_escape "$NEXIGON_REPOSITORY")" \
+              "$(toml_escape "$NEXIGON_PACKAGE")" \
+              "{{ $tag }}" \
+              >>"$ROOTDIR"/etc/nexigon/agent.toml
+      fi
+
       sed -i "s|@@TIMEOUT@@|{{ $watchdog_timeout }}|g" \
           "$ROOTDIR"/usr/lib/systemd/system/nexigon-rugix-watchdog.timer
-
-      if [ -n "${NEXIGON_REPOSITORY:-}" ] && [ -n "${NEXIGON_PACKAGE:-}" ]; then
-          cat >"$ROOTDIR"/etc/nexigon-rugix-ota.json <<EOF
-      {"path": "${NEXIGON_REPOSITORY}/${NEXIGON_PACKAGE}/{{ $tag }}", "rugix": {"useBundleHash": true}}
-      EOF
-      else
-          cat >"$ROOTDIR"/etc/nexigon-rugix-ota.json <<'EOF'
-      {"rugix": {"useBundleHash": true}}
-      EOF
-      fi
 
       install -d "$ROOTDIR"/etc/rugix
       cat >"$ROOTDIR"/etc/rugix/system-build-info.json <<EOF
@@ -166,4 +192,3 @@ actions:
       nexigon-revpi-pictory-property.path
       nexigon-revpi-pictory-property.service
       nexigon-rugix-watchdog.timer
-      nexigon-rugix-ota.timer
