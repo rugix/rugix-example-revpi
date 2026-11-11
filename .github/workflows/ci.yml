@@ -77,7 +77,7 @@ jobs:
       - name: Build app bundle
         env:
           CONTAINER_RUNTIME: docker
-        run: mise run build
+        run: nix develop --command mise run build
 
       - name: Upload app bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -125,7 +125,7 @@ jobs:
           NEXIGON: ${{ matrix.nexigon }}
           OUTPUT: ${{ matrix.output }}
           VERSION: ${{ needs.release-metadata.outputs.build_tag }}
-        run: mise run build:os:release
+        run: nix develop --command mise run build:os:release
 
       - name: Collect debos artifacts
         env:
@@ -212,7 +212,7 @@ jobs:
           export PUBLISH_ROLLING="${publish_rolling}"
           export PUBLISH_STABLE="${publish_stable}"
 
-          mise run publish
+          nix develop --command mise run publish
 
   publish-release:
     name: Publish GitHub Release
