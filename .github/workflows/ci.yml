@@ -60,43 +60,24 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          install: false
+      - name: Install Project Tools
+        env:
+          MISE_GITHUB_TOKEN: ${{ github.token }}
+        run: mise install
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         with:
           platforms: arm64
 
-      - name: Install Rugix Bundler
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          case "$(uname -m)" in
-              x86_64|amd64) triple="x86_64-unknown-linux-musl" ;;
-              aarch64|arm64) triple="aarch64-unknown-linux-musl" ;;
-              *) echo "unsupported runner architecture: $(uname -m)" >&2; exit 1 ;;
-          esac
-
-          mkdir -p .tools
-          tmpdir="$(mktemp -d)"
-          trap 'rm -rf "${tmpdir}"' EXIT
-
-          curl -fsSL \
-              "https://github.com/rugix/rugix/releases/download/${RUGIX_VERSION}/binaries-${triple}.tar" \
-              -o "${tmpdir}/rugix-binaries.tar"
-          tar -xf "${tmpdir}/rugix-binaries.tar" -C "${tmpdir}"
-
-          bundler="$(find "${tmpdir}" -type f -name rugix-bundler -perm -111 | head -n 1)"
-          if [ -z "${bundler}" ]; then
-              echo "rugix-bundler not found in release archive" >&2
-              exit 1
-          fi
-          install -m 0755 "${bundler}" .tools/rugix-bundler
-
       - name: Build app bundle
         env:
           CONTAINER_RUNTIME: docker
-          RUGIX_BUNDLER: ${{ github.workspace }}/.tools/rugix-bundler
-        run: apps/revpi-dio-grafana/build.sh
+        run: nix develop --command mise run build
 
       - name: Upload app bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -126,59 +107,30 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Prepare mise platform detection
+        run: |
+          ldd_path=$(nix develop --command bash -c 'command -v ldd')
+          dirname "$ldd_path" >> "$GITHUB_PATH"
+
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          install: false
+      - name: Install Project Tools
+        env:
+          MISE_GITHUB_TOKEN: ${{ github.token }}
+        run: mise install
+
       - name: Build debos image and bundle
-        working-directory: os/debos
         env:
           NEXIGON: ${{ matrix.nexigon }}
           OUTPUT: ${{ matrix.output }}
           VERSION: ${{ needs.release-metadata.outputs.build_tag }}
-        run: |
-          set -euo pipefail
-
-          args=(
-              -tflavour:lite
-              -ttype:rugix
-              -tdocker:true
-              -trugix_apps:true
-              -trugix_admin:true
-              -tgen_sbom:true
-              -toutput:"${OUTPUT}"
-              -tversion:"${VERSION}"
-          )
-          if [ "${NEXIGON}" = "true" ]; then
-              args+=(
-                  -tnexigon:true
-                  -tnexigon_provisioning:true
-              )
-          fi
-
-          ./run-debos "${args[@]}" revpi.yaml
+        run: nix develop --command mise run build:os:release
 
       - name: Collect debos artifacts
-        working-directory: os/debos
         env:
           OUTPUT: ${{ matrix.output }}
-        run: |
-          set -euo pipefail
-
-          rm -rf dist
-          mkdir -p dist
-          for src in build/"${OUTPUT}".* build/packages_"${OUTPUT}".csv; do
-              if [ -e "${src}" ]; then
-                  cp "${src}" dist/
-              fi
-          done
-          sbom=build/sbom-"${OUTPUT}".json
-          if [ ! -e "${sbom}" ]; then
-              echo "expected SPDX SBOM '${sbom}' was not generated" >&2
-              exit 1
-          fi
-          cp "${sbom}" dist/"${OUTPUT}".spdx.json
-
-          if ! find dist -type f -print -quit | grep -q .; then
-              echo "no debos artifacts found" >&2
-              exit 1
-          fi
+        run: mise run release:collect
 
       - name: Upload debos artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -206,13 +158,19 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          install: false
+      - name: Install Project Tools
+        env:
+          MISE_GITHUB_TOKEN: ${{ github.token }}
+        run: mise install
+
       - name: Download build artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: dist
-
-      - name: Install Nexigon CLI
-        run: curl -fsSL https://install.nexigon.dev/download-cli.sh | sh
 
       - name: Publish Nexigon assets and tags
         env:
@@ -220,7 +178,6 @@ jobs:
           BUILD_TAG: ${{ needs.release-metadata.outputs.build_tag }}
           FLOATING_TAG: ${{ needs.release-metadata.outputs.floating_tag }}
           GIT_RELEASE_TAG: ${{ needs.release-metadata.outputs.git_release_tag }}
-          NEXIGON_CLI: ./nexigon-cli
           NEXIGON_HUB_URL: ${{ secrets.NEXIGON_HUB_URL }}
           NEXIGON_REPOSITORY: ${{ secrets.NEXIGON_REPOSITORY }}
           NEXIGON_TOKEN: ${{ secrets.NEXIGON_TOKEN }}
@@ -255,7 +212,7 @@ jobs:
           export PUBLISH_ROLLING="${publish_rolling}"
           export PUBLISH_STABLE="${publish_stable}"
 
-          ./scripts/publish-nexigon-release.sh
+          nix develop --command mise run publish
 
   publish-release:
     name: Publish GitHub Release

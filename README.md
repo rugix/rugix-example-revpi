@@ -85,6 +85,29 @@ The repository is split into application examples and OS image examples:
   with Rugix A/B system updates, managed state, Rugix Apps support, optional
   Rugix Admin, and Nexigon integration.
 
+## Development Tasks
+
+Install [mise](https://mise.jdx.dev/), Docker or Podman, and Skopeo. Mise
+provides Rugix Bundler for building the ARM64 app bundle:
+
+```sh
+mise install
+mise run build
+```
+
+See the [app build guide](apps/revpi-dio-grafana/README.md#get-the-app-bundle)
+for ARM64 emulation requirements.
+
+For OS images, use `mise run build:os -- <debos-options> revpi.yaml`.
+See the [local image build guide](os/debos/README.md#build-an-image-locally)
+for prerequisites and options.
+
+An optional Nix shell supplies native tools on x86-64 and AArch64 Linux:
+
+```sh
+nix develop --command mise run build
+```
+
 ## Support
 
 This repository is covered by
