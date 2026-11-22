@@ -179,6 +179,7 @@ jobs:
           FLOATING_TAG: ${{ needs.release-metadata.outputs.floating_tag }}
           GIT_RELEASE_TAG: ${{ needs.release-metadata.outputs.git_release_tag }}
           NEXIGON_HUB_URL: ${{ secrets.NEXIGON_HUB_URL }}
+          NEXIGON_ORGANIZATION: ${{ vars.NEXIGON_ORGANIZATION }}
           NEXIGON_REPOSITORY: ${{ secrets.NEXIGON_REPOSITORY }}
           NEXIGON_TOKEN: ${{ secrets.NEXIGON_TOKEN }}
         run: |

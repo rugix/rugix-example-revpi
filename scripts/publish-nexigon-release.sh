@@ -14,11 +14,13 @@ require_variable() {
     fi
 }
 
+# A user token needs `--organization`; an organization API token selects its own.
 run_cli() {
     if [ -n "${NEXIGON_CLI_CONFIG:-}" ]; then
-        "$NEXIGON_CLI" --config "$NEXIGON_CLI_CONFIG" "$@"
+        "$NEXIGON_CLI" --config "$NEXIGON_CLI_CONFIG" \
+            ${NEXIGON_ORGANIZATION:+--organization "$NEXIGON_ORGANIZATION"} "$@"
     else
-        "$NEXIGON_CLI" "$@"
+        "$NEXIGON_CLI" ${NEXIGON_ORGANIZATION:+--organization "$NEXIGON_ORGANIZATION"} "$@"
     fi
 }
 
