@@ -8,8 +8,9 @@
 {{- $tag := or .tag "stable" -}}
 {{- $interval := or .interval "4h" -}}
 {{- $watchdog_timeout := or .watchdog_timeout "300" -}}
-{{- $agent_version := or .agent_version "git-5e3f543" -}}
+{{- $agent_version := or .agent_version "v0.7.0" -}}
 {{- $provisioning := or .provisioning "false" -}}
+{{- $rugix_apps := or .rugix_apps "false" -}}
 
 architecture: {{ $arch }}
 
@@ -143,6 +144,17 @@ actions:
               "{{ $tag }}" \
               >>"$ROOTDIR"/etc/nexigon/agent.toml
       fi
+
+      {{- if eq $rugix_apps "true" }}
+
+      # Apps with the Rugix Apps integration of the agent.
+      cat >>"$ROOTDIR"/etc/nexigon/agent.toml <<'EOF'
+
+      [integrations.rugix.apps]
+      enabled = true
+      use-bundle-hash = true
+      EOF
+      {{- end }}
 
       sed -i "s|@@TIMEOUT@@|{{ $watchdog_timeout }}|g" \
           "$ROOTDIR"/usr/lib/systemd/system/nexigon-rugix-watchdog.timer

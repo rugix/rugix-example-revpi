@@ -139,12 +139,12 @@ nexigon-agent device properties get \
     com.kunbus.revpi.pictory.configuration | jq
 ```
 
-When `nexigon` and `rugix_apps` are both enabled, the image also installs the
-commands Nexigon Hub uses to deploy, inspect, start, stop, roll back, and remove
-Rugix Apps. The deployment command passes
-`--insecure-skip-bundle-verification`, matching this example's development-only
-security posture and allowing unsigned app bundles. Do not use this setting in
-production.
+When `nexigon` and `rugix_apps` are both enabled, Nexigon Agent also manages
+Rugix Apps. Choose a release for an app on the **Applications** tab of a device,
+and the agent installs it and keeps it running. Nexigon Hub can also start, stop,
+roll back, and remove apps that you installed by other means. The agent verifies
+app bundles with the bundle hash from their metadata in Nexigon Hub, which the
+publishing script adds, so this example's unsigned app bundles install.
 
 ## Try Rugix Apps
 
@@ -241,8 +241,8 @@ update bundle that can be installed on an already running Rugix-managed RevPi.
   example.
 - `nexigon`: Install and configure Nexigon integration. Default: `false`.
 - `nexigon_agent_version`: Nexigon Agent version to install, either a release
-  such as `v0.6.0` or a build such as `git-5e3f543`. Default: `git-5e3f543`, a
-  build with the system update integration of Nexigon Agent.
+  such as `v0.7.0` or a development build such as `git-c17a888`. Default:
+  `v0.7.0`.
 - `nexigon_provisioning`: Enable local Nexigon pairing on port `6947`. Default:
   `false`.
 - `version`: Version embedded in `/etc/rugix/system-build-info.json` when
